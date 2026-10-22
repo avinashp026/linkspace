@@ -2,16 +2,21 @@
 "use client";
 
 import { useState } from "react";
+import { DragDropProvider } from "@dnd-kit/react";
+import { isSortable } from "@dnd-kit/react/sortable";
+
 import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
 import type { LinkData, ProfileData } from "./types";
 import Container from "@/components/Container";
 import Header from "@/components/Header";
 
-type LinkActionResult = { success: true; error: "" }
+type LinkActionResult =
+  | { success: true; error: "" }
   | { success: false; error: string };
 
-type ValidatedLink = { success: true; title: string; url: string }
+type ValidatedLink =
+  | { success: true; title: string; url: string }
   | { success: false; error: string };
 
 const EditorPage = () => {
@@ -27,7 +32,6 @@ const EditorPage = () => {
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // The unsaved values currently shown in the link form.
   const [linkInfo, setLinkInfo] = useState({
     title: "",
     url: "",
@@ -44,8 +48,10 @@ const EditorPage = () => {
     }));
   };
 
-  // Shared validation for adding and editing links.
-  const validateLink = (title: string, url: string): ValidatedLink => {
+  const validateLink = (
+    title: string,
+    url: string,
+  ): ValidatedLink => {
     const trimmedTitle = title.trim();
     const trimmedUrl = url.trim();
 
@@ -81,7 +87,6 @@ const EditorPage = () => {
     };
   };
 
-  // Add a new link.
   const addLink = (
     title: string,
     url: string,
@@ -103,7 +108,6 @@ const EditorPage = () => {
     return { success: true, error: "" };
   };
 
-  // Update an existing link.
   const updateLink = (
     id: string,
     title: string,
@@ -128,17 +132,14 @@ const EditorPage = () => {
     return { success: true, error: "" };
   };
 
-  // Load the selected link into the form.
   const startEditingLink = (link: LinkData) => {
     setEditingId(link.id);
-
     setLinkInfo({
       title: link.title,
       url: link.url,
     });
   };
 
-  // Cancel editing without changing the saved link.
   const cancelEditing = () => {
     setEditingId(null);
     setLinkInfo({ title: "", url: "" });
@@ -147,8 +148,7 @@ const EditorPage = () => {
   const deleteLink = (id: string) => {
     setLinks((prev) => prev.filter((link) => link.id !== id));
 
-    // If the deleted link is being edited, reset the form.
-    if(editingId === id){
+    if (editingId === id) {
       cancelEditing();
     }
   };
@@ -166,21 +166,46 @@ const EditorPage = () => {
               addLink={addLink}
               updateLink={updateLink}
               editingId={editingId}
-              setEditingId={setEditingId}
               linkInfo={linkInfo}
               setLinkInfo={setLinkInfo}
               cancelEditing={cancelEditing}
             />
           </div>
 
-          <div>
+          <DragDropProvider
+            onDragEnd={(event) => {
+              if (event.canceled) return;
+
+              const { source } = event.operation;
+
+              if (!isSortable(source)) return;
+
+              const { initialIndex, index } = source;
+
+              if (initialIndex === index) return;
+
+              setLinks((prev) => {
+                const reorderedLinks = [...prev];
+                const [movedLink] = reorderedLinks.splice(
+                  initialIndex,
+                  1,
+                );
+
+                if (!movedLink) return prev;
+
+                reorderedLinks.splice(index, 0, movedLink);
+
+                return reorderedLinks;
+              });
+            }}
+          >
             <ProfilePreview
               profileData={profileData}
               links={links}
               onEdit={startEditingLink}
               deleteLink={deleteLink}
             />
-          </div>
+          </DragDropProvider>
         </div>
       </Container>
     </>

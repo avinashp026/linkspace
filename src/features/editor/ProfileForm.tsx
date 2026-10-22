@@ -20,7 +20,6 @@ type ProfileFormProps = {
     url: string,
   ) => LinkActionResult;
   editingId: string | null;
-  setEditingId: Dispatch<SetStateAction<string | null>>;
   linkInfo: {
     title: string;
     url: string;
@@ -37,7 +36,6 @@ const ProfileForm = ({
   addLink,
   updateLink,
   editingId,
-  setEditingId,
   linkInfo,
   setLinkInfo,
   cancelEditing,

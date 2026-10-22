@@ -1,4 +1,8 @@
+
+"use client";
+
 import type { LinkData, ProfileData } from "./types";
+import SortableLink from "./SortableLink";
 
 type ProfilePreviewProps = {
   profileData: ProfileData;
@@ -30,45 +34,19 @@ const ProfilePreview = ({
           {profileData.displayName}
         </h3>
 
-        <p className="text-slate-700 text-sm">{profileData.bio}</p>
+        <p className="text-slate-700 text-sm">
+          {profileData.bio}
+        </p>
 
         <div className="w-full flex flex-col mt-2 gap-2">
-          {links.map((link) => (
-            <div
+          {links.map((link, index) => (
+            <SortableLink
               key={link.id}
-              className="flex items-center justify-between gap-3 border rounded-md p-3"
-            >
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm text-slate-800 font-medium">
-                  {link.title}
-                </p>
-
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-sm text-slate-700 break-all"
-                >
-                  {link.url}
-                </a>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onEdit(link)}
-                className="border rounded-md px-3 py-1"
-              >
-                Edit
-              </button>
-
-              <button
-                type="button"
-                onClick={() => deleteLink(link.id)}
-                className="border border-red-300 text-red-600 rounded-md px-3 py-1"
-              >
-                Delete
-              </button>
-            </div>
+              link={link}
+              index={index}
+              onEdit={onEdit}
+              onDelete={deleteLink}
+            />
           ))}
         </div>
       </div>
