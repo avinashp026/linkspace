@@ -1,24 +1,25 @@
-
 const Header = () => {
   return (
-    <header className="border-b pb-1 border-slate-200 px-4 py-1">
-        <div className="flex justify-between items-center">
+    <header className="sticky top-0 z-30 border-b border-[#E8E8ED] bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-4 sm:h-16 sm:px-8">
+        <span className="text-[19px] font-semibold tracking-tight text-[#1D1D1F]">
+          LinkSpace
+        </span>
 
-        {/* left */}
-        <div className="flex flex-col">
-        <h2 className="text-slate-900 font-medium">LinkSpace</h2>
-        <p className="text-sm text-slate-700">Your corner of the internet</p>
+        <div className="flex items-center gap-5">
+          <span className="hidden text-[13px] text-[#6E6E73] sm:inline">
+            Draft saved
+          </span>
+          <button
+            type="button"
+            className="h-11 cursor-pointer rounded-full bg-[#1D1D1F] px-5 text-[15px] font-medium text-white transition hover:bg-black active:scale-[0.98]"
+          >
+            Publish
+          </button>
         </div>
-
-        {/* right */}
-        <div>
-            <button className="bg-slate-800 text-slate-100 px-3 py-1.5 rounded-md cursor-pointer">
-                Publish
-            </button>
-        </div>
-        </div>
+      </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;
