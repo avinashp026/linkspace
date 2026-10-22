@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { LinkData, ProfileData } from "./types";
 
@@ -21,7 +21,14 @@ type ProfileFormProps = {
   ) => LinkActionResult;
   editingId: string | null;
   setEditingId: Dispatch<SetStateAction<string | null>>;
-  links: LinkData[];
+  linkInfo: {
+    title: string;
+    url: string;
+  };
+  setLinkInfo: Dispatch<
+    SetStateAction<{ title: string; url: string }>
+  >;
+  cancelEditing: () => void;
 };
 
 const ProfileForm = ({
@@ -31,33 +38,12 @@ const ProfileForm = ({
   updateLink,
   editingId,
   setEditingId,
-  links,
+  linkInfo,
+  setLinkInfo,
+  cancelEditing,
 }: ProfileFormProps) => {
   const [linkError, setLinkError] = useState("");
 
-  const [linkInfo, setLinkInfo] = useState({
-    title: "",
-    url: "",
-  });
-
-  // Find the link currently being edited.
-  const editingLink = links.find((link) => link.id === editingId);
-
-  // Load the selected link into the inputs.
-  useEffect(() => {
-    if (editingLink) {
-      setLinkInfo({
-        title: editingLink.title,
-        url: editingLink.url,
-      });
-      setLinkError("");
-    } else if (editingId === null) {
-      setLinkInfo({ title: "", url: "" });
-      setLinkError("");
-    }
-  }, [editingId, editingLink]);
-
-  // Handle profile input changes.
   const handleLinkInfoChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -67,9 +53,11 @@ const ProfileForm = ({
       ...prev,
       [name]: value,
     }));
+
+    // Clear the old validation message while the user edits.
+    setLinkError("");
   };
 
-  // Add a new link or save edits to an existing link.
   const handleSubmitLink = () => {
     let result: LinkActionResult;
 
@@ -92,10 +80,8 @@ const ProfileForm = ({
     setLinkError("");
   };
 
-  // Cancel editing and clear the form.
   const handleCancelEdit = () => {
-    setEditingId(null);
-    setLinkInfo({ title: "", url: "" });
+    cancelEditing();
     setLinkError("");
   };
 
@@ -168,10 +154,7 @@ const ProfileForm = ({
           />
 
           {linkError && (
-            <p
-              className="text-sm text-red-600"
-              role="alert"
-            >
+            <p className="text-sm text-red-600" role="alert">
               {linkError}
             </p>
           )}

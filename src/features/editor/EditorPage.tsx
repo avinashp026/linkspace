@@ -23,21 +23,18 @@ const EditorPage = () => {
   });
 
   const [links, setLinks] = useState<LinkData[]>([
-    {
-      id: "1",
-      title: "Github",
-      url: "https://github.com",
-    },
-    {
-      id: "2",
-      title: "Portfolio",
-      url: "https://example.com",
-    },
+    { id: "1", title: "Github", url: "https://github.com" },
+    { id: "2", title: "Portfolio", url: "https://example.com" },
   ]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Update profile fields.
+  // The unsaved values currently shown in the link form.
+  const [linkInfo, setLinkInfo] = useState({
+    title: "",
+    url: "",
+  });
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -49,7 +46,7 @@ const EditorPage = () => {
     }));
   };
 
-  // Validate link data before adding or updating.
+  // Shared validation for adding and editing links.
   const validateLink = (title: string, url: string): ValidatedLink => {
     const trimmedTitle = title.trim();
     const trimmedUrl = url.trim();
@@ -87,7 +84,10 @@ const EditorPage = () => {
   };
 
   // Add a new link.
-  const addLink = (title: string, url: string): LinkActionResult => {
+  const addLink = (
+    title: string,
+    url: string,
+  ): LinkActionResult => {
     const result = validateLink(title, url);
 
     if (!result.success) {
@@ -130,9 +130,20 @@ const EditorPage = () => {
     return { success: true, error: "" };
   };
 
-  // Load a link into the form for editing.
+  // Load the selected link into the form.
   const startEditingLink = (link: LinkData) => {
     setEditingId(link.id);
+
+    setLinkInfo({
+      title: link.title,
+      url: link.url,
+    });
+  };
+
+  // Cancel editing without changing the saved link.
+  const cancelEditing = () => {
+    setEditingId(null);
+    setLinkInfo({ title: "", url: "" });
   };
 
   return (
@@ -149,7 +160,9 @@ const EditorPage = () => {
               updateLink={updateLink}
               editingId={editingId}
               setEditingId={setEditingId}
-              links={links}
+              linkInfo={linkInfo}
+              setLinkInfo={setLinkInfo}
+              cancelEditing={cancelEditing}
             />
           </div>
 
