@@ -1,14 +1,16 @@
-import { ReactNode } from "react"
+
+import type { ReactNode } from "react";
 
 type ContainerProps = {
-    children: ReactNode;
-}
-const Container = ({children}: ContainerProps) => {
-  return (
-    <div className="max-w-6xl mx-auto px-4 md:px-24 py-1 md:py-2">
-        {children}
-    </div>
-  )
-}
+  children: ReactNode;
+};
 
-export default Container
+const Container = ({ children }: ContainerProps) => {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+      {children}
+    </div>
+  );
+};
+
+export default Container;

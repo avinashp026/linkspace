@@ -158,7 +158,7 @@ const EditorPage = () => {
       <Header />
 
       <Container>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-6 py-8 lg:grid-cols-2 lg:gap-8">
           <div>
             <ProfileForm
               profileData={profileData}
