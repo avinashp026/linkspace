@@ -1,16 +1,17 @@
-
 import type { LinkData, ProfileData } from "./types";
 
 type ProfilePreviewProps = {
   profileData: ProfileData;
   links: LinkData[];
   onEdit: (link: LinkData) => void;
+  deleteLink: (id: string) => void;
 };
 
 const ProfilePreview = ({
   profileData,
   links,
   onEdit,
+  deleteLink,
 }: ProfilePreviewProps) => {
   return (
     <div className="p-4">
@@ -29,9 +30,7 @@ const ProfilePreview = ({
           {profileData.displayName}
         </h3>
 
-        <p className="text-slate-700 text-sm">
-          {profileData.bio}
-        </p>
+        <p className="text-slate-700 text-sm">{profileData.bio}</p>
 
         <div className="w-full flex flex-col mt-2 gap-2">
           {links.map((link) => (
@@ -60,6 +59,14 @@ const ProfilePreview = ({
                 className="border rounded-md px-3 py-1"
               >
                 Edit
+              </button>
+
+              <button
+                type="button"
+                onClick={() => deleteLink(link.id)}
+                className="border border-red-300 text-red-600 rounded-md px-3 py-1"
+              >
+                Delete
               </button>
             </div>
           ))}

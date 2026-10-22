@@ -8,12 +8,10 @@ import type { LinkData, ProfileData } from "./types";
 import Container from "@/components/Container";
 import Header from "@/components/Header";
 
-type LinkActionResult =
-  | { success: true; error: "" }
+type LinkActionResult = { success: true; error: "" }
   | { success: false; error: string };
 
-type ValidatedLink =
-  | { success: true; title: string; url: string }
+type ValidatedLink = { success: true; title: string; url: string }
   | { success: false; error: string };
 
 const EditorPage = () => {
@@ -146,6 +144,15 @@ const EditorPage = () => {
     setLinkInfo({ title: "", url: "" });
   };
 
+  const deleteLink = (id: string) => {
+    setLinks((prev) => prev.filter((link) => link.id !== id));
+
+    // If the deleted link is being edited, reset the form.
+    if(editingId === id){
+      cancelEditing();
+    }
+  };
+
   return (
     <>
       <Header />
@@ -171,6 +178,7 @@ const EditorPage = () => {
               profileData={profileData}
               links={links}
               onEdit={startEditingLink}
+              deleteLink={deleteLink}
             />
           </div>
         </div>
