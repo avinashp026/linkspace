@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,89 +8,160 @@ import type { LinkData, ProfileData } from "./types";
 import Container from "@/components/Container";
 import Header from "@/components/Header";
 
+type LinkActionResult =
+  | { success: true; error: "" }
+  | { success: false; error: string };
+
+type ValidatedLink =
+  | { success: true; title: string; url: string }
+  | { success: false; error: string };
+
 const EditorPage = () => {
   const [profileData, setProfileData] = useState<ProfileData>({
     displayName: "Sam",
     bio: "Hey, I am a frontend developer",
   });
+
   const [links, setLinks] = useState<LinkData[]>([
     {
-      id: "1", title: "Github", url: "https://github.com"
+      id: "1",
+      title: "Github",
+      url: "https://github.com",
     },
     {
-      id: "2", title: "Portfolio", url: "https://example.com",
-    }
-  ])
+      id: "2",
+      title: "Portfolio",
+      url: "https://example.com",
+    },
+  ]);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Update profile fields.
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setProfileData((prev) => {
-      return {
-        ...prev,
-        [name]: value,
-      };
-    });
+
+    setProfileData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Create a new link
-  const addLink = (title: string, url: string) => {
-   const trimmedTitle = title.trim();
-   const trimmedUrl = url.trim();
+  // Validate link data before adding or updating.
+  const validateLink = (title: string, url: string): ValidatedLink => {
+    const trimmedTitle = title.trim();
+    const trimmedUrl = url.trim();
 
-   if(!trimmedTitle || !trimmedUrl){
+    if (!trimmedTitle || !trimmedUrl) {
+      return {
+        success: false,
+        error: "Please enter both a title and a URL.",
+      };
+    }
+
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(trimmedUrl);
+    } catch {
+      return {
+        success: false,
+        error: "Enter a valid URL, including https://.",
+      };
+    }
+
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return {
+        success: false,
+        error: "Only HTTP and HTTPS links are allowed.",
+      };
+    }
+
     return {
-      success: false,
-      error: "Please enter both a title and a URL"
+      success: true,
+      title: trimmedTitle,
+      url: parsedUrl.href,
     };
-   }
+  };
 
-   let parsedUrl: URL;
+  // Add a new link.
+  const addLink = (title: string, url: string): LinkActionResult => {
+    const result = validateLink(title, url);
 
-   try {
-    parsedUrl = new URL(trimmedUrl);
-   }catch {
-    return {
-      success: false,
-      error: "Enter a valid URL, including https://."
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    const newLink: LinkData = {
+      id: crypto.randomUUID(),
+      title: result.title,
+      url: result.url,
     };
-   }
 
-   if(!['http:', "https:"].includes(parsedUrl.protocol)){
-    return {
-      success: false,
-      error: "Onlu HTTP and HTTPS links are allowed.",
-    };
-   }
-   
+    setLinks((prev) => [...prev, newLink]);
 
-  const newLink: LinkData = {
-    id: crypto.randomUUID(),
-    title: trimmedTitle,
-    url: parsedUrl.href
-  }
+    return { success: true, error: "" };
+  };
 
-    setLinks((prev) => [...prev, newLink])
+  // Update an existing link.
+  const updateLink = (
+    id: string,
+    title: string,
+    url: string,
+  ): LinkActionResult => {
+    const result = validateLink(title, url);
 
-    return {success: true, error: ""};
-  }
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
 
-  console.log(profileData);
+    setLinks((prev) =>
+      prev.map((link) =>
+        link.id === id
+          ? { ...link, title: result.title, url: result.url }
+          : link,
+      ),
+    );
+
+    setEditingId(null);
+
+    return { success: true, error: "" };
+  };
+
+  // Load a link into the form for editing.
+  const startEditingLink = (link: LinkData) => {
+    setEditingId(link.id);
+  };
+
   return (
     <>
-      <Header/>
-    <Container>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="">
-        <ProfileForm profileData={profileData} handleChange={handleChange} addLink={addLink}/>
-      </div>
+      <Header />
 
-      <div className="">
-        <ProfilePreview profileData={profileData} links={links} />
-      </div>
-    </div>
-    </Container>
+      <Container>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <ProfileForm
+              profileData={profileData}
+              handleChange={handleChange}
+              addLink={addLink}
+              updateLink={updateLink}
+              editingId={editingId}
+              setEditingId={setEditingId}
+              links={links}
+            />
+          </div>
+
+          <div>
+            <ProfilePreview
+              profileData={profileData}
+              links={links}
+              onEdit={startEditingLink}
+            />
+          </div>
+        </div>
+      </Container>
     </>
   );
 };
