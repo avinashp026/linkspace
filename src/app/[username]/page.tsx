@@ -7,6 +7,7 @@ import type {
   LinkData,
   ProfileData,
 } from "@/features/editor/types";
+import Link from "next/link";
 
 type SavedEditorData = {
   profileData: ProfileData;
@@ -122,12 +123,12 @@ export default function PublicProfilePage() {
           This profile has no valid saved data in this browser.
         </p>
 
-        <a
+        <Link
           href="/editor"
           className="mt-6 rounded-xl bg-[#0071E3] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#0062C4]"
         >
           Open editor
-        </a>
+        </Link>
       </main>
     );
   }

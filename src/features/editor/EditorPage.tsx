@@ -77,15 +77,10 @@ const EditorPage = () => {
     useState<ProfileData>(DEFAULT_PROFILE);
 
   const [links, setLinks] = useState<LinkData[]>(DEFAULT_LINKS);
-
   const [isLoaded, setIsLoaded] = useState(false);
-
   const [editingId, setEditingId] = useState<string | null>(null);
-
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
-
   const [showLinkForm, setShowLinkForm] = useState(false);
-
   const [linkInfo, setLinkInfo] = useState({
     title: "",
     url: "",
