@@ -4,6 +4,7 @@
 import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { LinkData, ProfileData } from "./types";
+import { validateUsername } from "@/utils/validation";
 import SortableLink from "./SortableLink";
 
 type LinkActionResult = {
@@ -56,6 +57,19 @@ const ProfileForm = ({
   startAddingLink,
 }: ProfileFormProps) => {
   const [linkError, setLinkError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+
+  const handleUsernameBlur = () => {
+    const error = validateUsername(profileData.username);
+    setUsernameError(error ?? "");
+  };
+
+  const handleUsernameChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    handleChange(e);
+    setUsernameError("");
+  };
 
   const handleLinkInfoChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -99,8 +113,9 @@ const ProfileForm = ({
     setLinkError("");
   };
 
-    const inputClass =
+  const inputClass =
     "h-11 w-full rounded-xl border border-[#D2D2D7] bg-white px-3.5 text-base text-[#1D1D1F] outline-none transition placeholder:text-[#8E8E93] focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/15 sm:text-[15px]";
+
   const labelClass = "mb-1.5 block text-[13px] text-[#6E6E73]";
 
   return (
@@ -113,17 +128,57 @@ const ProfileForm = ({
               ? profileData.displayName[0].toUpperCase()
               : "U"}
           </div>
+
           <div className="min-w-0">
             <p className="text-[15px] font-semibold">Profile</p>
-            <p className="text-[13px] text-[#6E6E73]">Make your page yours.</p>
+            <p className="text-[13px] text-[#6E6E73]">
+              Make your page yours.
+            </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Username */}
+          <div>
+            <label htmlFor="username" className={labelClass}>
+              Username
+            </label>
+
+            <div className="flex h-11 items-center rounded-xl border border-[#D2D2D7] bg-white px-3.5 focus-within:border-[#0071E3] focus-within:ring-4 focus-within:ring-[#0071E3]/15">
+              <span className="mr-1 shrink-0 text-[15px] text-[#8E8E93]">
+                linkspace.app/
+              </span>
+
+              <input
+                id="username"
+                name="username"
+                type="text"
+                value={profileData.username}
+                onChange={handleUsernameChange}
+                onBlur={handleUsernameBlur}
+                placeholder="yourname"
+                autoComplete="off"
+                className="min-w-0 flex-1 bg-transparent text-base text-[#1D1D1F] outline-none sm:text-[15px]"
+              />
+            </div>
+
+            {usernameError ? (
+              <p role="alert" className="mt-1.5 text-xs text-[#D70015]">
+                {usernameError}
+              </p>
+            ) : (
+              <p className="mt-1.5 text-xs text-[#6E6E73]">
+                Use 3–30 lowercase letters and numbers.
+              </p>
+            )}
+          </div>
+
+          {/* Display name */}
           <div>
             <label htmlFor="displayName" className={labelClass}>
               Display name
             </label>
+
             <input
               id="displayName"
               name="displayName"
@@ -134,10 +189,12 @@ const ProfileForm = ({
             />
           </div>
 
+          {/* Bio */}
           <div>
             <label htmlFor="bio" className={labelClass}>
               Bio
             </label>
+
             <textarea
               id="bio"
               name="bio"
@@ -156,7 +213,10 @@ const ProfileForm = ({
           <h2 className="text-xl font-semibold tracking-tight sm:text-[22px]">
             Links
           </h2>
-          <span className="text-[13px] text-[#6E6E73]">Drag to reorder</span>
+
+          <span className="text-[13px] text-[#6E6E73]">
+            Drag to reorder
+          </span>
         </div>
 
         {showLinkForm && (
@@ -168,6 +228,7 @@ const ProfileForm = ({
               <h3 className="text-[15px] font-semibold">
                 {editingId !== null ? "Edit link" : "Add a link"}
               </h3>
+
               <button
                 type="button"
                 onClick={handleCancel}
@@ -182,6 +243,7 @@ const ProfileForm = ({
                 <label htmlFor="link-title" className={labelClass}>
                   Title
                 </label>
+
                 <input
                   id="link-title"
                   name="title"
@@ -197,6 +259,7 @@ const ProfileForm = ({
                 <label htmlFor="link-url" className={labelClass}>
                   URL
                 </label>
+
                 <input
                   id="link-url"
                   name="url"

@@ -25,6 +25,7 @@ type SavedEditorData = {
 const STORAGE_KEY = "linkspace-editor-data";
 
 const DEFAULT_PROFILE: ProfileData = {
+  username: "",
   displayName: "Sam",
   bio: "Hey, I am a frontend developer",
 };
