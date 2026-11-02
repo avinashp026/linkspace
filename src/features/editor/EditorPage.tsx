@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,46 +18,23 @@ type ValidatedLink =
   | { success: true; title: string; url: string }
   | { success: false; error: string };
 
-type SavedEditorData = {
-  profileData: ProfileData;
-  links: LinkData[];
+type EditorPageProps = {
+  initialProfile: ProfileData;
 };
 
 const STORAGE_KEY = "linkspace-editor-data";
-
-const DEFAULT_PROFILE: ProfileData = {
-  username: "",
-  displayName: "Sam",
-  bio: "Hey, I am a frontend developer",
-};
 
 const DEFAULT_LINKS: LinkData[] = [
   { id: "1", title: "Github", url: "https://github.com" },
   { id: "2", title: "Portfolio", url: "https://example.com" },
 ];
 
-const isSavedEditorData = (value: unknown): value is SavedEditorData => {
-  if (typeof value !== "object" || value === null) {
+const isSavedLinks = (value: unknown): value is LinkData[] => {
+  if (!Array.isArray(value)) {
     return false;
   }
 
-  const data = value as Record<string, unknown>;
-
-  if (
-    typeof data.profileData !== "object" ||
-    data.profileData === null ||
-    !Array.isArray(data.links)
-  ) {
-    return false;
-  }
-
-  const profile = data.profileData as Record<string, unknown>;
-
-  const validProfile =
-    typeof profile.displayName === "string" &&
-    typeof profile.bio === "string";
-
-  const validLinks = data.links.every((link: unknown) => {
+  return value.every((link: unknown) => {
     if (typeof link !== "object" || link === null) {
       return false;
     }
@@ -69,25 +47,24 @@ const isSavedEditorData = (value: unknown): value is SavedEditorData => {
       typeof item.url === "string"
     );
   });
-
-  return validProfile && validLinks;
 };
 
-const EditorPage = () => {
+const EditorPage = ({ initialProfile }: EditorPageProps) => {
   const [profileData, setProfileData] =
-    useState<ProfileData>(DEFAULT_PROFILE);
+    useState<ProfileData>(initialProfile);
 
   const [links, setLinks] = useState<LinkData[]>(DEFAULT_LINKS);
   const [isLoaded, setIsLoaded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [showLinkForm, setShowLinkForm] = useState(false);
+
   const [linkInfo, setLinkInfo] = useState({
     title: "",
     url: "",
   });
 
-  // Load saved profile data when the editor first opens.
+  // Load existing links from localStorage temporarily.
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
@@ -95,35 +72,37 @@ const EditorPage = () => {
       if (savedData) {
         const parsedData: unknown = JSON.parse(savedData);
 
-        if (isSavedEditorData(parsedData)) {
-          setProfileData(parsedData.profileData);
+        if (
+          typeof parsedData === "object" &&
+          parsedData !== null &&
+          "links" in parsedData &&
+          isSavedLinks(parsedData.links)
+        ) {
           setLinks(parsedData.links);
         }
       }
     } catch (error) {
-      console.error("Unable to load saved LinkSpace data:", error);
+      console.error("Unable to load saved LinkSpace links:", error);
     } finally {
       setIsLoaded(true);
     }
   }, []);
 
-  // Save the profile and links whenever they change.
+  // Save links to localStorage temporarily.
   useEffect(() => {
     if (!isLoaded) {
       return;
     }
 
-    const dataToSave: SavedEditorData = {
-      profileData,
-      links,
-    };
-
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ links }),
+      );
     } catch (error) {
-      console.error("Unable to save LinkSpace data:", error);
+      console.error("Unable to save LinkSpace links:", error);
     }
-  }, [profileData, links, isLoaded]);
+  }, [links, isLoaded]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -372,7 +351,7 @@ const EditorPage = () => {
             </div>
 
             <p className="text-[13px] text-[#6E6E73]">
-              linkspace.app/sam
+              linkspace.app/{profileData.username || "yourname"}
             </p>
           </aside>
         </div>
