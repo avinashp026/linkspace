@@ -81,3 +81,70 @@ return {
     error: "",
 };
 }
+
+export const createLink = async (linkData: {
+    title: string,
+    url: string
+}) => {
+    const title = linkData.title.trim();
+    const url = linkData.url.trim();
+
+    if(!title || !url) {
+        return {
+            success: false as const,
+            error: "Please enter both a title and a URL."
+        };
+    }
+
+    let parsedUrl: URL;
+
+    try {
+        parsedUrl = new URL(url);
+    }catch {
+        return {
+            success: false as const,
+            error: "Enter a valid URL, including https://.",
+        }
+    }
+
+    if(!["https:", "https:"].includes(parsedUrl.protocol)){
+        return {
+            success: false as const,
+            error: "Only HTTP and HTTPS links are allowed.",
+        }
+    }
+
+    const supabase = await createClient();
+
+    const {
+        data: {user},
+        error: authError
+    } = await supabase.auth.getUser();
+
+    if(authError || !user) {
+        return {
+            success: false as const,
+            error: "You must be signed in to create a link."
+        }
+    }
+
+    const {data, error} = await supabase.from("links").insert({
+        profile_id: user.id,
+        title,
+        url: parsedUrl.href
+    }).select("id, title, url").single();
+
+    if(error) {
+        console.error("Link creation failed:", error)
+
+        return {
+            success: false as const,
+            error: "Unable to save your link. Please try again.",
+        };
+    }
+
+    return {
+        success: true as const,
+        link: data,
+    }
+}

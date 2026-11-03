@@ -21,7 +21,7 @@ type ProfileFormProps = {
   links: LinkData[];
   onEdit: (link: LinkData) => void;
   onDelete: (id: string) => void;
-  addLink: (title: string, url: string) => LinkActionResult;
+  addLink: (title: string, url: string) => Promise<LinkActionResult>;
   updateLink: (
     id: string,
     title: string,
@@ -122,23 +122,25 @@ const ProfileForm = ({
     setLinkError("");
   };
 
-  const handleSubmitLink = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmitLink = async (
+  e: React.SubmitEvent<HTMLFormElement>,
+) => {
+  e.preventDefault();
 
-    const result =
-      editingId !== null
-        ? updateLink(editingId, linkInfo.title, linkInfo.url)
-        : addLink(linkInfo.title, linkInfo.url);
+  const result =
+    editingId !== null
+      ? updateLink(editingId, linkInfo.title, linkInfo.url)
+      : await addLink(linkInfo.title, linkInfo.url);
 
-    if (!result.success) {
-      setLinkError(result.error);
-      return;
-    }
+  if (!result.success) {
+    setLinkError(result.error);
+    return;
+  }
 
-    setLinkInfo({ title: "", url: "" });
-    setLinkError("");
-    setShowLinkForm(false);
-  };
+  setLinkInfo({ title: "", url: "" });
+  setLinkError("");
+  setShowLinkForm(false);
+};
 
   const handleEdit = (link: LinkData) => {
     onEdit(link);

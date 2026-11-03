@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 
@@ -9,6 +9,7 @@ import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
 import type { LinkData, ProfileData } from "./types";
 import Header from "@/components/Header";
+import { createLink } from "./actions";
 
 type LinkActionResult =
   | { success: true; error: "" }
@@ -20,41 +21,18 @@ type ValidatedLink =
 
 type EditorPageProps = {
   initialProfile: ProfileData;
+  initialLinks: LinkData[];
 };
 
-const STORAGE_KEY = "linkspace-editor-data";
-
-const DEFAULT_LINKS: LinkData[] = [
-  { id: "1", title: "Github", url: "https://github.com" },
-  { id: "2", title: "Portfolio", url: "https://example.com" },
-];
-
-const isSavedLinks = (value: unknown): value is LinkData[] => {
-  if (!Array.isArray(value)) {
-    return false;
-  }
-
-  return value.every((link: unknown) => {
-    if (typeof link !== "object" || link === null) {
-      return false;
-    }
-
-    const item = link as Record<string, unknown>;
-
-    return (
-      typeof item.id === "string" &&
-      typeof item.title === "string" &&
-      typeof item.url === "string"
-    );
-  });
-};
-
-const EditorPage = ({ initialProfile }: EditorPageProps) => {
+const EditorPage = ({
+  initialProfile,
+  initialLinks,
+}: EditorPageProps) => {
   const [profileData, setProfileData] =
     useState<ProfileData>(initialProfile);
 
-  const [links, setLinks] = useState<LinkData[]>(DEFAULT_LINKS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [links, setLinks] = useState<LinkData[]>(initialLinks);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -63,46 +41,6 @@ const EditorPage = ({ initialProfile }: EditorPageProps) => {
     title: "",
     url: "",
   });
-
-  // Load existing links from localStorage temporarily.
-  useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-
-      if (savedData) {
-        const parsedData: unknown = JSON.parse(savedData);
-
-        if (
-          typeof parsedData === "object" &&
-          parsedData !== null &&
-          "links" in parsedData &&
-          isSavedLinks(parsedData.links)
-        ) {
-          setLinks(parsedData.links);
-        }
-      }
-    } catch (error) {
-      console.error("Unable to load saved LinkSpace links:", error);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  // Save links to localStorage temporarily.
-  useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
-
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ links }),
-      );
-    } catch (error) {
-      console.error("Unable to save LinkSpace links:", error);
-    }
-  }, [links, isLoaded]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -154,25 +92,37 @@ const EditorPage = ({ initialProfile }: EditorPageProps) => {
     };
   };
 
-  const addLink = (
+  const addLink = async (
     title: string,
     url: string,
-  ): LinkActionResult => {
+  ): Promise<LinkActionResult> => {
+    // Validate before sending the request
     const result = validateLink(title, url);
 
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
-    const newLink: LinkData = {
-      id: crypto.randomUUID(),
+    // Save the link in Supabase
+    const savedLink = await createLink({
       title: result.title,
-      url: result.url,
-    };
+      url: result.url
+    })
 
-    setLinks((prev) => [...prev, newLink]);
+    if(!savedLink.success) {
+      return {
+        success: false,
+        error: savedLink.error
+      }
+    }
 
-    return { success: true, error: "" };
+    // Update the preview using the actual database record
+    setLinks((prev) => [...prev, savedLink.link])
+
+    return {
+      success: true,
+      error: ""
+    }
   };
 
   const updateLink = (
