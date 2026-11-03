@@ -9,7 +9,7 @@ import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
 import type { LinkData, ProfileData } from "./types";
 import Header from "@/components/Header";
-import { createLink, updateLink as updateLinkAction, deleteLink as deleteLinkAction } from "./actions";
+import { createLink, updateLink as updateLinkAction, deleteLink as deleteLinkAction, saveLinkOrder } from "./actions";
 
 type LinkActionResult =
   | { success: true; error: "" }
@@ -218,42 +218,53 @@ const EditorPage = ({
   };
 };
 
-  const handleDragEnd = (
-    event: Parameters<
-      NonNullable<
-        React.ComponentProps<typeof DragDropProvider>["onDragEnd"]
-      >
-    >[0],
-  ) => {
-    if (event.canceled) {
-      return;
-    }
+  const handleDragEnd = async (
+  event: Parameters<
+    NonNullable<
+      React.ComponentProps<typeof DragDropProvider>["onDragEnd"]
+    >
+  >[0],
+) => {
+  if (event.canceled) {
+    return;
+  }
 
-    const { source } = event.operation;
+  const { source } = event.operation;
 
-    if (!isSortable(source)) {
-      return;
-    }
+  if (!isSortable(source)) {
+    return;
+  }
 
-    const { initialIndex, index } = source;
+  const { initialIndex, index } = source;
 
-    if (initialIndex === index) {
-      return;
-    }
+  if (initialIndex === index) {
+    return;
+  }
 
-    setLinks((prev) => {
-      const reordered = [...prev];
-      const [movedLink] = reordered.splice(initialIndex, 1);
+  // Create the new order without changing the current state yet.
+  const reordered = [...links];
 
-      if (!movedLink) {
-        return prev;
-      }
+  const [movedLink] = reordered.splice(initialIndex, 1);
 
-      reordered.splice(index, 0, movedLink);
+  if (!movedLink) {
+    return;
+  }
 
-      return reordered;
-    });
-  };
+  reordered.splice(index, 0, movedLink);
+
+  // Save the new order in Supabase.
+  const result = await saveLinkOrder(
+    reordered.map((link) => link.id),
+  );
+
+  if (!result.success) {
+    console.error("Unable to save link order:", result.error);
+    return;
+  }
+
+  // Update the UI after Supabase confirms success.
+  setLinks(reordered);
+};
 
   return (
     <div className="min-h-dvh bg-[#FBFBFD] text-[#1D1D1F] lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">

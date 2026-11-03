@@ -258,3 +258,43 @@ export const deleteLink = async (linkId: string) => {
     error: ""
   };
 }
+
+export const saveLinkOrder = async (linkIds: string[]) => {
+  if(!Array.isArray(linkIds) || new Set(linkIds).size !== linkIds.length) {
+    return {
+      success: false as const,
+      error: "Invalid link order."
+    }
+  }
+
+  const supabase = await createClient();
+
+  const {data: {user}, error: authError} = await supabase.auth.getUser();
+
+  if(authError || !user) {
+    return {
+      success: false as const,
+      error: 'You must be signed in to reorder links.'
+    }
+  }
+
+  for(const [position, id] of linkIds.entries()) {
+    const {data, error} = await supabase.from("links").update({position}).eq("id", id).eq("profile_id", user.id).select("id").maybeSingle();
+
+     if(error || !data){
+      console.error("Link ordering failed:", error)
+
+      return {
+        success: false as const,
+        error: "Unable to save your link order. Please try again."
+      };
+     }
+  }
+
+  return {
+    success: true as const,
+    error: "",
+  };
+
+ 
+}
