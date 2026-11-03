@@ -26,7 +26,7 @@ type ProfileFormProps = {
     id: string,
     title: string,
     url: string,
-  ) => LinkActionResult;
+  ) => Promise<LinkActionResult>;
   editingId: string | null;
   linkInfo: {
     title: string;
@@ -129,7 +129,7 @@ const ProfileForm = ({
 
   const result =
     editingId !== null
-      ? updateLink(editingId, linkInfo.title, linkInfo.url)
+      ? await updateLink(editingId, linkInfo.title, linkInfo.url)
       : await addLink(linkInfo.title, linkInfo.url);
 
   if (!result.success) {

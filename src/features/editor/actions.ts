@@ -1,150 +1,260 @@
-"use server"
+"use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { validateUsername } from "@/utils/validation";
 
 export const saveProfile = async (profileData: {
-    username: string;
-    displayName: string;
-    bio: string;
+  username: string;
+  displayName: string;
+  bio: string;
 }) => {
-    // 1. Validate the input on the server
+  // 1. Validate the input on the server
 
-    const username = profileData.username.trim();
-    const displayName = profileData.displayName.trim();
-    const bio = profileData.bio.trim();
+  const username = profileData.username.trim();
+  const displayName = profileData.displayName.trim();
+  const bio = profileData.bio.trim();
 
-    const usernameError = validateUsername(username);
+  const usernameError = validateUsername(username);
 
-    if(usernameError){
-        return {
-            success: false,
-            error: usernameError
-        }
-    }
+  if (usernameError) {
+    return {
+      success: false,
+      error: usernameError,
+    };
+  }
 
+  if (!displayName) {
+    return {
+      success: false,
+      error: "Displat name is required",
+    };
+  }
 
-    if(!displayName){
-        return {
-            success: false,
-            error: "Displat name is required"
-        }
-    }
+  // 2. Create an authenticated supabase client.
+  const supabase = await createClient();
 
-    // 2. Create an authenticated supabase client.
-    const supabase = await createClient();
+  // 3. Verify the signed-in user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    // 3. Verify the signed-in user
-    const {
-        data: {user},
-        error: authError,
-    } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return {
+      success: false,
+      error: "You must be signed in to save your profile",
+    };
+  }
 
-    if(authError || !user){
-        return {
-            success: false,
-            error: "You must be signed in to save your profile",
-        }
-    }
-
-    // 4. Create or update the user's profile
-    const {error} = await supabase.from("profiles").upsert({
-        id: user.id,
-        username,
-        display_name: displayName,
-        bio,
-        updated_at: new Date().toISOString(),
+  // 4. Create or update the user's profile
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      username,
+      display_name: displayName,
+      bio,
+      updated_at: new Date().toISOString(),
     },
     {
-        onConflict: "id"
-    }
-)
+      onConflict: "id",
+    },
+  );
 
-if(error) {
+  if (error) {
     console.error("Profile save failed:", error);
 
-    if(error.code === "23505"){
-        return {
-            success: false,
-            error: "This username is already taken. Please choose another."
-        };
+    if (error.code === "23505") {
+      return {
+        success: false,
+        error: "This username is already taken. Please choose another.",
+      };
     }
 
     return {
-        success: false,
-        error: "Unable to save your profile. Please try again.",
-    }
-}
+      success: false,
+      error: "Unable to save your profile. Please try again.",
+    };
+  }
 
-return {
+  return {
     success: true,
     error: "",
+  };
 };
-}
 
-export const createLink = async (linkData: {
-    title: string,
-    url: string
-}) => {
+export const createLink = async (linkData: { title: string; url: string }) => {
+  const title = linkData.title.trim();
+  const url = linkData.url.trim();
+
+  if (!title || !url) {
+    return {
+      success: false as const,
+      error: "Please enter both a title and a URL.",
+    };
+  }
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return {
+      success: false as const,
+      error: "Enter a valid URL, including https://.",
+    };
+  }
+
+  if (!["https:", "https:"].includes(parsedUrl.protocol)) {
+    return {
+      success: false as const,
+      error: "Only HTTP and HTTPS links are allowed.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      success: false as const,
+      error: "You must be signed in to create a link.",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("links")
+    .insert({
+      profile_id: user.id,
+      title,
+      url: parsedUrl.href,
+    })
+    .select("id, title, url")
+    .single();
+
+  if (error) {
+    console.error("Link creation failed:", error);
+
+    return {
+      success: false as const,
+      error: "Unable to save your link. Please try again.",
+    };
+  }
+
+  return {
+    success: true as const,
+    link: data,
+  };
+};
+
+export const updateLink = async (linkId: string, linkData: {
+    title: string;
+    url: string;
+},) => {
     const title = linkData.title.trim();
     const url = linkData.url.trim();
 
-    if(!title || !url) {
+    if(!linkId || !title || !url){
         return {
             success: false as const,
-            error: "Please enter both a title and a URL."
-        };
+            error: "Please provide a valid link, title, and URL",
+        }
     }
 
     let parsedUrl: URL;
 
     try {
         parsedUrl = new URL(url);
-    }catch {
+    } catch {
         return {
             success: false as const,
-            error: "Enter a valid URL, including https://.",
-        }
+            error: 'Enter a valid URL, including https://.'
+        };
     }
 
-    if(!["https:", "https:"].includes(parsedUrl.protocol)){
+    if(!["https:", "https:"].includes(parsedUrl.protocol)) {
         return {
             success: false as const,
-            error: "Only HTTP and HTTPS links are allowed.",
+            error: "Only HTTP and HTTPS links are allowed."
         }
     }
 
     const supabase = await createClient();
 
-    const {
-        data: {user},
-        error: authError
-    } = await supabase.auth.getUser();
+    const {data: {user}, error: authError} = await supabase.auth.getUser();
 
-    if(authError || !user) {
+    if(authError || !user){
         return {
             success: false as const,
-            error: "You must be signed in to create a link."
+            error: "You must be signed in to update a link."
         }
     }
 
-    const {data, error} = await supabase.from("links").insert({
-        profile_id: user.id,
+    const {data, error} = await supabase.from("links").update({
         title,
         url: parsedUrl.href
-    }).select("id, title, url").single();
+    }).eq("id", linkId).eq("profile_id", user.id).select("id, title, url").single();
 
     if(error) {
-        console.error("Link creation failed:", error)
+        console.error("Link update failed:", error)
 
         return {
             success: false as const,
-            error: "Unable to save your link. Please try again.",
-        };
+            error: "Unable to update your link. Please try again."
+        }
     }
 
     return {
         success: true as const,
         link: data,
+    };
+}
+
+export const deleteLink = async (linkId: string) => {
+  if(!linkId) {
+    return {
+      success: false as const,
+      error: "Invalid link."
     }
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: {user},
+    error: authError
+  } = await supabase.auth.getUser();
+
+  if(authError || !user){
+    return {
+      success: false as const,
+      error: "You must be signed in to delete a link."
+    }
+  }
+
+  const {data, error} = await supabase.from("links").delete().eq("id", linkId).eq("profile_id", user.id).select("id").maybeSingle();
+
+  if(error) {
+    console.error("Link deletion failed:", error);
+
+    return {
+      success: false as const,
+      error: "Unable to delete your link. Please try again."
+    }
+  }
+
+  if(!data) {
+    return {
+      success: false as const,
+      error: "Link not found or you do not have permission to delete it."
+    };
+  }
+
+  return {
+    success: true as const,
+    error: ""
+  };
 }

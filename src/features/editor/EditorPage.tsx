@@ -9,7 +9,7 @@ import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
 import type { LinkData, ProfileData } from "./types";
 import Header from "@/components/Header";
-import { createLink } from "./actions";
+import { createLink, updateLink as updateLinkAction, deleteLink as deleteLinkAction } from "./actions";
 
 type LinkActionResult =
   | { success: true; error: "" }
@@ -125,31 +125,47 @@ const EditorPage = ({
     }
   };
 
-  const updateLink = (
-    id: string,
-    title: string,
-    url: string,
-  ): LinkActionResult => {
-    const result = validateLink(title, url);
+  const updateLink = async (
+  id: string,
+  title: string,
+  url: string,
+): Promise<LinkActionResult> => {
+  const result = validateLink(title, url);
 
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error,
+    };
+  }
 
-    setLinks((prev) =>
-      prev.map((link) =>
-        link.id === id
-          ? { ...link, title: result.title, url: result.url }
-          : link,
-      ),
-    );
+  const updatedLink = await updateLinkAction(id, {
+    title: result.title,
+    url: result.url,
+  });
 
-    setEditingId(null);
-    setLinkInfo({ title: "", url: "" });
-    setShowLinkForm(false);
+  if (!updatedLink.success) {
+    return {
+      success: false,
+      error: updatedLink.error,
+    };
+  }
 
-    return { success: true, error: "" };
+  setLinks((prev) =>
+    prev.map((link) =>
+      link.id === id ? updatedLink.link : link,
+    ),
+  );
+
+  setEditingId(null);
+  setLinkInfo({ title: "", url: "" });
+  setShowLinkForm(false);
+
+  return {
+    success: true,
+    error: "",
   };
+};
 
   const startEditingLink = (link: LinkData) => {
     setEditingId(link.id);
@@ -180,13 +196,27 @@ const EditorPage = ({
     });
   };
 
-  const deleteLink = (id: string) => {
-    setLinks((prev) => prev.filter((link) => link.id !== id));
+  const deleteLink = async (id: string): Promise<LinkActionResult> => {
+  const result = await deleteLinkAction(id);
 
-    if (editingId === id) {
-      cancelEditing();
-    }
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error,
+    };
+  }
+
+  setLinks((prev) => prev.filter((link) => link.id !== id));
+
+  if (editingId === id) {
+    cancelEditing();
+  }
+
+  return {
+    success: true,
+    error: "",
   };
+};
 
   const handleDragEnd = (
     event: Parameters<
