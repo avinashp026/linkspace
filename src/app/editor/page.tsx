@@ -18,7 +18,7 @@ const Page = async () => {
   // 2. Load the user's profile.
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("username, display_name, bio")
+    .select("username, display_name, bio, is_published")
     .eq("id", userId)
     .maybeSingle();
 
@@ -70,6 +70,7 @@ const Page = async () => {
     <EditorPage
       initialProfile={initialProfile}
       initialLinks={initialLinks}
+      initialIsPublished={profile?.is_published ?? false}
     />
   );
 };

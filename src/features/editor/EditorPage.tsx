@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -9,7 +8,10 @@ import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
 import type { LinkData, ProfileData } from "./types";
 import Header from "@/components/Header";
-import { createLink, updateLink as updateLinkAction, deleteLink as deleteLinkAction, saveLinkOrder } from "./actions";
+import {
+  saveAllEditorData,
+  setProfilePublished,
+} from "./actions";
 
 type LinkActionResult =
   | { success: true; error: "" }
@@ -22,11 +24,13 @@ type ValidatedLink =
 type EditorPageProps = {
   initialProfile: ProfileData;
   initialLinks: LinkData[];
+  initialIsPublished: boolean;
 };
 
 const EditorPage = ({
   initialProfile,
   initialLinks,
+  initialIsPublished,
 }: EditorPageProps) => {
   const [profileData, setProfileData] =
     useState<ProfileData>(initialProfile);
@@ -37,10 +41,33 @@ const EditorPage = ({
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [showLinkForm, setShowLinkForm] = useState(false);
 
+  const [isPublished, setIsPublished] = useState(initialIsPublished);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [saveError, setSaveError] = useState("");
+  const [publishError, setPublishError] = useState("");
+
   const [linkInfo, setLinkInfo] = useState({
     title: "",
     url: "",
   });
+
+  // This represents the last version successfully saved to Supabase.
+  // Comparing against it lets us detect unsaved changes.
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    JSON.stringify({
+      profileData: initialProfile,
+      links: initialLinks,
+    }),
+  );
+
+  const currentSnapshot = JSON.stringify({
+    profileData,
+    links,
+  });
+
+  const hasUnsavedChanges = currentSnapshot !== savedSnapshot;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -53,10 +80,7 @@ const EditorPage = ({
     }));
   };
 
-  const validateLink = (
-    title: string,
-    url: string,
-  ): ValidatedLink => {
+  const validateLink = (title: string, url: string): ValidatedLink => {
     const trimmedTitle = title.trim();
     const trimmedUrl = url.trim();
 
@@ -92,80 +116,70 @@ const EditorPage = ({
     };
   };
 
+  // Add a link to local state. It will be saved when the user clicks Save.
   const addLink = async (
     title: string,
     url: string,
   ): Promise<LinkActionResult> => {
-    // Validate before sending the request
     const result = validateLink(title, url);
 
     if (!result.success) {
-      return { success: false, error: result.error };
-    }
-
-    // Save the link in Supabase
-    const savedLink = await createLink({
-      title: result.title,
-      url: result.url
-    })
-
-    if(!savedLink.success) {
       return {
         success: false,
-        error: savedLink.error
-      }
+        error: result.error,
+      };
     }
 
-    // Update the preview using the actual database record
-    setLinks((prev) => [...prev, savedLink.link])
+    const newLink: LinkData = {
+      id: crypto.randomUUID(),
+      title: result.title,
+      url: result.url,
+    };
+
+    setLinks((prev) => [...prev, newLink]);
 
     return {
       success: true,
-      error: ""
-    }
+      error: "",
+    };
   };
 
+  // Update a link in local state. No database request happens here.
   const updateLink = async (
-  id: string,
-  title: string,
-  url: string,
-): Promise<LinkActionResult> => {
-  const result = validateLink(title, url);
+    id: string,
+    title: string,
+    url: string,
+  ): Promise<LinkActionResult> => {
+    const result = validateLink(title, url);
 
-  if (!result.success) {
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    setLinks((prev) =>
+      prev.map((link) =>
+        link.id === id
+          ? {
+              ...link,
+              title: result.title,
+              url: result.url,
+            }
+          : link,
+      ),
+    );
+
+    setEditingId(null);
+    setLinkInfo({ title: "", url: "" });
+    setShowLinkForm(false);
+
     return {
-      success: false,
-      error: result.error,
+      success: true,
+      error: "",
     };
-  }
-
-  const updatedLink = await updateLinkAction(id, {
-    title: result.title,
-    url: result.url,
-  });
-
-  if (!updatedLink.success) {
-    return {
-      success: false,
-      error: updatedLink.error,
-    };
-  }
-
-  setLinks((prev) =>
-    prev.map((link) =>
-      link.id === id ? updatedLink.link : link,
-    ),
-  );
-
-  setEditingId(null);
-  setLinkInfo({ title: "", url: "" });
-  setShowLinkForm(false);
-
-  return {
-    success: true,
-    error: "",
   };
-};
 
   const startEditingLink = (link: LinkData) => {
     setEditingId(link.id);
@@ -196,79 +210,153 @@ const EditorPage = ({
     });
   };
 
+  // Delete a link from local state. The deletion is persisted on Save.
   const deleteLink = async (id: string): Promise<LinkActionResult> => {
-  const result = await deleteLinkAction(id);
+    setLinks((prev) => prev.filter((link) => link.id !== id));
 
-  if (!result.success) {
+    if (editingId === id) {
+      cancelEditing();
+    }
+
     return {
-      success: false,
-      error: result.error,
+      success: true,
+      error: "",
     };
-  }
-
-  setLinks((prev) => prev.filter((link) => link.id !== id));
-
-  if (editingId === id) {
-    cancelEditing();
-  }
-
-  return {
-    success: true,
-    error: "",
   };
-};
 
-  const handleDragEnd = async (
-  event: Parameters<
-    NonNullable<
-      React.ComponentProps<typeof DragDropProvider>["onDragEnd"]
-    >
-  >[0],
-) => {
-  if (event.canceled) {
-    return;
-  }
+  // Reordering also changes local state only.
+  const handleDragEnd = (
+    event: Parameters<
+      NonNullable<React.ComponentProps<typeof DragDropProvider>["onDragEnd"]>
+    >[0],
+  ) => {
+    if (event.canceled) {
+      return;
+    }
 
-  const { source } = event.operation;
+    const { source } = event.operation;
 
-  if (!isSortable(source)) {
-    return;
-  }
+    if (!isSortable(source)) {
+      return;
+    }
 
-  const { initialIndex, index } = source;
+    const { initialIndex, index } = source;
 
-  if (initialIndex === index) {
-    return;
-  }
+    if (initialIndex === index) {
+      return;
+    }
 
-  // Create the new order without changing the current state yet.
-  const reordered = [...links];
+    setLinks((prev) => {
+      const reordered = [...prev];
+      const [movedLink] = reordered.splice(initialIndex, 1);
 
-  const [movedLink] = reordered.splice(initialIndex, 1);
+      if (!movedLink) {
+        return prev;
+      }
 
-  if (!movedLink) {
-    return;
-  }
+      reordered.splice(index, 0, movedLink);
 
-  reordered.splice(index, 0, movedLink);
+      return reordered;
+    });
+  };
 
-  // Save the new order in Supabase.
-  const result = await saveLinkOrder(
-    reordered.map((link) => link.id),
-  );
+  // Save the current profile and complete link list to Supabase.
+  const saveCurrentData = async (): Promise<boolean> => {
+    setIsSaving(true);
+    setSaveError("");
 
-  if (!result.success) {
-    console.error("Unable to save link order:", result.error);
-    return;
-  }
+    try {
+      const result = await saveAllEditorData(profileData, links);
 
-  // Update the UI after Supabase confirms success.
-  setLinks(reordered);
-};
+      if (!result.success) {
+        setSaveError(result.error);
+        return false;
+      }
+
+      // Only mark the current version as saved after Supabase confirms success.
+      setSavedSnapshot(currentSnapshot);
+
+      return true;
+    } catch {
+      setSaveError("Something went wrong while saving your changes.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (isSaving || isPublishing) {
+      return;
+    }
+
+    await saveCurrentData();
+  };
+
+  const handlePublishToggle = async () => {
+    if (isSaving || isPublishing) {
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishError("");
+    setSaveError("");
+
+    try {
+      // Unpublishing does not save or discard any pending editor changes.
+      if (isPublished) {
+        const result = await setProfilePublished(false);
+
+        if (!result.success) {
+          setPublishError(result.error);
+          return;
+        }
+
+        setIsPublished(false);
+        return;
+      }
+
+      // Publishing must first save all pending edits.
+      if (hasUnsavedChanges) {
+        const saved = await saveCurrentData();
+
+        if (!saved) {
+          setPublishError(
+            "Your changes could not be saved, so your page was not published.",
+          );
+          return;
+        }
+      }
+
+      const result = await setProfilePublished(true);
+
+      if (!result.success) {
+        setPublishError(
+          `Your changes were saved, but publishing failed: ${result.error}`,
+        );
+        return;
+      }
+
+      setIsPublished(true);
+    } catch {
+      setPublishError("Something went wrong while updating your page.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-[#FBFBFD] text-[#1D1D1F] lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
-      <Header />
+      <Header
+        isPublished={isPublished}
+        isPublishing={isPublishing}
+        isSaving={isSaving}
+        hasUnsavedChanges={hasUnsavedChanges}
+        saveError={saveError}
+        publishError={publishError}
+        onSave={handleSave}
+        onPublishToggle={handlePublishToggle}
+      />
 
       <main className="mx-auto w-full max-w-[1120px] px-4 pb-32 pt-4 sm:px-8 lg:min-h-0 lg:flex-1 lg:pb-0 lg:pt-0">
         {/* Mobile Edit / Preview toggle */}
@@ -335,10 +423,7 @@ const EditorPage = ({
             </span>
 
             <div className="min-h-[520px] w-full overflow-hidden rounded-3xl border border-[#E8E8ED] bg-white lg:h-[clamp(420px,calc(100dvh-14rem),640px)] lg:min-h-0 lg:w-[300px] lg:rounded-[44px] lg:border-6 lg:border-[#1D1D1F]">
-              <ProfilePreview
-                profileData={profileData}
-                links={links}
-              />
+              <ProfilePreview profileData={profileData} links={links} />
             </div>
 
             <p className="text-[13px] text-[#6E6E73]">
