@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { LinkData, ProfileData } from "./types";
 import { validateUsername } from "@/utils/validation";
-import { saveProfile } from "./actions";
 import SortableLink from "./SortableLink";
 
 type LinkActionResult = {
@@ -59,8 +58,6 @@ const ProfileForm = ({
 }: ProfileFormProps) => {
   const [linkError, setLinkError] = useState("");
   const [usernameError, setUsernameError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [profileMessage, setProfileMessage] = useState("");
 
   const handleUsernameBlur = () => {
     const error = validateUsername(profileData.username);
@@ -72,41 +69,6 @@ const ProfileForm = ({
   ) => {
     handleChange(e);
     setUsernameError("");
-    setProfileMessage("");
-  };
-
-  const handleSaveProfile = async () => {
-    const error = validateUsername(profileData.username);
-
-    if (error) {
-      setUsernameError(error);
-      setProfileMessage("");
-      return;
-    }
-
-    if (!profileData.displayName.trim()) {
-      setProfileMessage("Display name is required.");
-      return;
-    }
-
-    setIsSaving(true);
-    setProfileMessage("");
-
-    try {
-      const result = await saveProfile(profileData);
-
-      if (!result.success) {
-        setProfileMessage(result.error);
-        return;
-      }
-
-      setProfileMessage("Profile saved successfully.");
-    } catch (error) {
-      console.error("Unable to save profile:", error);
-      setProfileMessage("Something went wrong. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const handleLinkInfoChange = (
@@ -123,24 +85,24 @@ const ProfileForm = ({
   };
 
   const handleSubmitLink = async (
-  e: React.SubmitEvent<HTMLFormElement>,
-) => {
-  e.preventDefault();
+    e: React.SubmitEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
 
-  const result =
-    editingId !== null
-      ? await updateLink(editingId, linkInfo.title, linkInfo.url)
-      : await addLink(linkInfo.title, linkInfo.url);
+    const result =
+      editingId !== null
+        ? await updateLink(editingId, linkInfo.title, linkInfo.url)
+        : await addLink(linkInfo.title, linkInfo.url);
 
-  if (!result.success) {
-    setLinkError(result.error);
-    return;
-  }
+    if (!result.success) {
+      setLinkError(result.error);
+      return;
+    }
 
-  setLinkInfo({ title: "", url: "" });
-  setLinkError("");
-  setShowLinkForm(false);
-};
+    setLinkInfo({ title: "", url: "" });
+    setLinkError("");
+    setShowLinkForm(false);
+  };
 
   const handleEdit = (link: LinkData) => {
     onEdit(link);
@@ -224,10 +186,7 @@ const ProfileForm = ({
               name="displayName"
               type="text"
               value={profileData.displayName}
-              onChange={(e) => {
-                handleChange(e);
-                setProfileMessage("");
-              }}
+              onChange={handleChange}
               className={inputClass}
             />
           </div>
@@ -242,38 +201,10 @@ const ProfileForm = ({
               id="bio"
               name="bio"
               value={profileData.bio}
-              onChange={(e) => {
-                handleChange(e);
-                setProfileMessage("");
-              }}
+              onChange={handleChange}
               rows={3}
               className={`${inputClass} h-auto resize-none py-3`}
             />
-          </div>
-
-          {/* Save profile */}
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleSaveProfile}
-              disabled={isSaving}
-              className="h-11 rounded-xl bg-[#0071E3] text-[15px] font-medium text-white transition hover:bg-[#0062C4] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSaving ? "Saving..." : "Save profile"}
-            </button>
-
-            {profileMessage && (
-              <p
-                role="status"
-                className={`text-[13px] ${
-                  profileMessage === "Profile saved successfully."
-                    ? "text-green-700"
-                    : "text-[#D70015]"
-                }`}
-              >
-                {profileMessage}
-              </p>
-            )}
           </div>
         </div>
       </section>
