@@ -1,7 +1,34 @@
+
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { login } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setGoogleError("");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setGoogleError(error.message);
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -13,7 +40,58 @@ export default function LoginPage() {
           Sign in to manage your LinkSpace page.
         </p>
 
-        <form action={login} className="mt-8 space-y-5">
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading}
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {googleLoading ? (
+            "Connecting to Google..."
+          ) : (
+            <>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 48 48"
+                className="h-5 w-5"
+              >
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.72 7.18l7.62 5.91c4.45-4.12 7.14-10.19 7.14-17.56Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.11 1.42-4.81 2.27-8.28 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
+                />
+              </svg>
+              Continue with Google
+            </>
+          )}
+        </button>
+
+        {googleError && (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            Google sign-in failed: {googleError}
+          </p>
+        )}
+
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs font-medium uppercase text-gray-400">
+            Or continue with email
+          </span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <form action={login} className="space-y-5">
           <div>
             <label
               htmlFor="email"
