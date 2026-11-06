@@ -1,3 +1,5 @@
+
+import { Suspense } from "react";
 import ProfilePreview from "@/features/editor/ProfilePreview";
 import { LinkData, ProfileData } from "@/features/editor/types";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +11,9 @@ type PublicProfilePageProps = {
   }>;
 };
 
-const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
+async function PublicProfileContent({
+  params,
+}: PublicProfilePageProps) {
   const { username } = await params;
 
   const supabase = await createClient();
@@ -21,15 +25,13 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
     .maybeSingle();
 
   if (profileError) {
-    console.error("Unable to load public profiles:", profileError.message);
+    console.error("Unable to load public profile:", profileError.message);
     throw new Error("Unable to load this profile");
   }
 
   if (!profile) {
     notFound();
   }
-
-  // Retrieve the links belonging to this profile
 
   const { data: databaseLinks, error: linksError } = await supabase
     .from("links")
@@ -38,7 +40,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
     .order("position", { ascending: true });
 
   if (linksError) {
-    console.error("Unable to load public links", linksError.message);
+    console.error("Unable to load public links:", linksError.message);
     throw new Error("Unable to load public links");
   }
 
@@ -61,6 +63,20 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
       </div>
     </main>
   );
-};
+}
 
-export default PublicProfilePage;
+function ProfileLoading() {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-[#FBFBFD] px-4 py-8">
+      <div className="h-96 w-full max-w-[380px] animate-pulse rounded-[32px] bg-gray-200" />
+    </main>
+  );
+}
+
+export default function PublicProfilePage(props: PublicProfilePageProps) {
+  return (
+    <Suspense fallback={<ProfileLoading />}>
+      <PublicProfileContent params={props.params} />
+    </Suspense>
+  );
+}
