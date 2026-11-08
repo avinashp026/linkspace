@@ -2,6 +2,35 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { validateUsername } from "@/utils/validation";
+import type { AppearanceData } from "./types";
+
+// Types for the Editor Profile and links input
+type EditorProfileInput = {
+  username: string;
+  displayName: string;
+  bio: string;
+};
+
+type EditorLinkInput = {
+  id: string;
+  title: string;
+  url: string;
+};
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const MAX_LINKS = 20;
+const MAX_DISPLAY_NAME_LENGTH = 50;
+const MAX_BIO_LENGTH = 160;
+const MAX_LINK_TITLE_LENGTH = 40;
+const MAX_URL_LENGTH = 2048;
+
+// Appearance Validation
+
+type EditorAppearanceInput = AppearanceData;
+const ALLOWED_THEMES = ["minimal", "dark", "soft", "bold"];
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 export const saveProfile = async (profileData: {
   username: string;
@@ -371,30 +400,10 @@ export const setProfilePublished = async (isPublished: boolean) => {
   };
 };
 
-type EditorProfileInput = {
-  username: string;
-  displayName: string;
-  bio: string;
-};
-
-type EditorLinkInput = {
-  id: string;
-  title: string;
-  url: string;
-};
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const MAX_LINKS = 20;
-const MAX_DISPLAY_NAME_LENGTH = 50;
-const MAX_BIO_LENGTH = 160;
-const MAX_LINK_TITLE_LENGTH = 40;
-const MAX_URL_LENGTH = 2048;
-
 export const saveAllEditorData = async (
   profileData: EditorProfileInput,
   links: EditorLinkInput[],
+  appearance: EditorAppearanceInput,
 ) => {
   // 1. Authenticate the user first
 
@@ -452,7 +461,24 @@ export const saveAllEditorData = async (
     };
   }
 
-  // 3. validate the links collection
+  // 3. Validate appearance settings
+  if (
+    !appearance ||
+    typeof appearance !== "object" ||
+    !ALLOWED_THEMES.includes(appearance.theme) ||
+    !HEX_COLOR_REGEX.test(appearance.backgroundColor) ||
+    !HEX_COLOR_REGEX.test(appearance.textColor) ||
+    !HEX_COLOR_REGEX.test(appearance.buttonColor) ||
+    !HEX_COLOR_REGEX.test(appearance.buttonTextColor) ||
+    !HEX_COLOR_REGEX.test(appearance.accentColor)
+  ) {
+    return {
+      success: false as const,
+      error: "Invalid appearance settings.",
+    };
+  }
+
+  // 4. validate the links collection
   if (!Array.isArray(links) || links.length > MAX_LINKS) {
     return {
       success: false as const,
@@ -572,6 +598,16 @@ export const saveAllEditorData = async (
       username,
       display_name: displayName,
       bio,
+
+      // Appearance settings
+      theme: appearance.theme,
+      background_color: appearance.backgroundColor,
+      text_color: appearance.textColor,
+      button_color: appearance.buttonColor,
+      button_text_color: appearance.buttonTextColor,
+      accent_color: appearance.accentColor,
+
+      
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },

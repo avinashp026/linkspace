@@ -2,6 +2,15 @@
 import EditorPage from "@/features/editor/EditorPage";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import {
+  DEFAULT_APPEARANCE,
+  type AppearanceData,
+  type ThemeName,
+} from "@/features/editor/types";
+
+const isThemeName = (value: string): value is ThemeName => {
+  return ["minimal", "dark", "soft", "bold"].includes(value);
+};
 
 const Page = async () => {
   const supabase = await createClient();
@@ -15,10 +24,23 @@ const Page = async () => {
     redirect("/login");
   }
 
-  // 2. Load the user's profile.
+  // 2. Load the user's profile and appearance settings.
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("username, display_name, bio, is_published")
+    .select(
+      `
+        username,
+        display_name,
+        bio,
+        is_published,
+        theme,
+        background_color,
+        text_color,
+        button_color,
+        button_text_color,
+        accent_color
+      `,
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -66,11 +88,32 @@ const Page = async () => {
         bio: "",
       };
 
+  // 5. Convert database appearance fields to camelCase.
+  const initialAppearance: AppearanceData = profile
+    ? {
+        theme: isThemeName(profile.theme)
+          ? profile.theme
+          : DEFAULT_APPEARANCE.theme,
+        backgroundColor:
+          profile.background_color ??
+          DEFAULT_APPEARANCE.backgroundColor,
+        textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
+        buttonColor:
+          profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
+        buttonTextColor:
+          profile.button_text_color ??
+          DEFAULT_APPEARANCE.buttonTextColor,
+        accentColor:
+          profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
+      }
+    : DEFAULT_APPEARANCE;
+
   return (
     <EditorPage
       initialProfile={initialProfile}
       initialLinks={initialLinks}
       initialIsPublished={profile?.is_published ?? false}
+      initialAppearance={initialAppearance}
     />
   );
 };

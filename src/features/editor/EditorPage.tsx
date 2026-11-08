@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,12 +7,15 @@ import { Palette, UserRound } from "lucide-react";
 
 import ProfileForm from "./ProfileForm";
 import ProfilePreview from "./ProfilePreview";
-import type { LinkData, ProfileData } from "./types";
-import Header from "@/components/Header";
 import {
-  saveAllEditorData,
-  setProfilePublished,
-} from "./actions";
+  DEFAULT_APPEARANCE,
+  type AppearanceData,
+  type LinkData,
+  type ProfileData,
+  type ThemeName,
+} from "./types";
+import Header from "@/components/Header";
+import { saveAllEditorData, setProfilePublished } from "./actions";
 
 type LinkActionResult =
   | { success: true; error: "" }
@@ -27,17 +29,85 @@ type EditorPageProps = {
   initialProfile: ProfileData;
   initialLinks: LinkData[];
   initialIsPublished: boolean;
+  initialAppearance: AppearanceData;
 };
 
 type WorkspaceTab = "content" | "appearance";
+
+const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
+  minimal: {
+    theme: "minimal",
+    backgroundColor: "#FFFFFF",
+    textColor: "#1D1D1F",
+    buttonColor: "#1D1D1F",
+    buttonTextColor: "#FFFFFF",
+    accentColor: "#0071E3",
+  },
+  dark: {
+    theme: "dark",
+    backgroundColor: "#111827",
+    textColor: "#F9FAFB",
+    buttonColor: "#374151",
+    buttonTextColor: "#FFFFFF",
+    accentColor: "#A78BFA",
+  },
+  soft: {
+    theme: "soft",
+    backgroundColor: "#FFF7ED",
+    textColor: "#44403C",
+    buttonColor: "#FED7AA",
+    buttonTextColor: "#7C2D12",
+    accentColor: "#F97316",
+  },
+  bold: {
+    theme: "bold",
+    backgroundColor: "#FDF2F8",
+    textColor: "#831843",
+    buttonColor: "#BE185D",
+    buttonTextColor: "#FFFFFF",
+    accentColor: "#7C3AED",
+  },
+};
+
+const COLOR_CONTROLS: {
+  key: keyof Omit<AppearanceData, "theme">;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "backgroundColor",
+    label: "Page background",
+    description: "The main background behind your profile.",
+  },
+  {
+    key: "textColor",
+    label: "Text",
+    description: "Your name and profile description.",
+  },
+  {
+    key: "buttonColor",
+    label: "Button",
+    description: "The background of your profile links.",
+  },
+  {
+    key: "buttonTextColor",
+    label: "Button text",
+    description: "The text shown inside your link buttons.",
+  },
+  {
+    key: "accentColor",
+    label: "Accent",
+    description: "Your profile avatar and focus accents.",
+  },
+];
 
 const EditorPage = ({
   initialProfile,
   initialLinks,
   initialIsPublished,
+  initialAppearance,
 }: EditorPageProps) => {
-  const [profileData, setProfileData] =
-    useState<ProfileData>(initialProfile);
+  const [profileData, setProfileData] = useState<ProfileData>(initialProfile);
 
   const [links, setLinks] = useState<LinkData[]>(initialLinks);
 
@@ -59,17 +129,24 @@ const EditorPage = ({
     url: "",
   });
 
+  const [appearance, setAppearance] = useState<AppearanceData>({
+    ...DEFAULT_APPEARANCE,
+    ...initialAppearance,
+  });
+
   // Represents the last version successfully saved to Supabase.
   const [savedSnapshot, setSavedSnapshot] = useState(() =>
     JSON.stringify({
       profileData: initialProfile,
       links: initialLinks,
+      appearance: initialAppearance,
     }),
   );
 
   const currentSnapshot = JSON.stringify({
     profileData,
     links,
+    appearance,
   });
 
   const hasUnsavedChanges = currentSnapshot !== savedSnapshot;
@@ -273,7 +350,7 @@ const EditorPage = ({
     setSaveError("");
 
     try {
-      const result = await saveAllEditorData(profileData, links);
+      const result = await saveAllEditorData(profileData, links, appearance);
 
       if (!result.success) {
         setSaveError(result.error);
@@ -468,7 +545,7 @@ const EditorPage = ({
               </DragDropProvider>
             )}
 
-            {/* Appearance workspace - theme controls come next */}
+            {/* Appearance workspace */}
             {activeWorkspace === "appearance" && (
               <div className="pb-10">
                 <div className="mb-7">
@@ -476,76 +553,141 @@ const EditorPage = ({
                     Make it yours
                   </h2>
                   <p className="mt-1 max-w-[480px] text-[14px] leading-6 text-[#6E6E73]">
-                    Choose a visual style for your page and customize its
-                    colors, backgrounds, and buttons.
+                    Choose a starting theme, then fine-tune the colors. Your
+                    preview updates as you make changes.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-[#E8E8ED] bg-white p-6 sm:p-8">
-                  <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#F2F6FF] text-[#0071E3]">
-                    <Palette size={21} strokeWidth={1.8} />
+                <section className="mb-6 rounded-2xl border border-[#E8E8ED] bg-white p-5 sm:p-6">
+                  <div className="mb-4">
+                    <h3 className="text-[16px] font-semibold">Choose a theme</h3>
+                    <p className="mt-1 text-[13px] text-[#6E6E73]">
+                      Selecting a theme applies its color palette. You can
+                      customize every color below.
+                    </p>
                   </div>
 
-                  <h3 className="text-[17px] font-semibold">
-                    Your page, your style
-                  </h3>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {(
+                      [
+                        { name: "Minimal", value: "minimal" },
+                        { name: "Dark", value: "dark" },
+                        { name: "Soft", value: "soft" },
+                        { name: "Bold", value: "bold" },
+                      ] as const
+                    ).map((theme) => {
+                      const preset = THEME_PRESETS[theme.value];
+                      const isSelected = appearance.theme === theme.value;
 
-                  <p className="mt-2 max-w-[420px] text-[14px] leading-6 text-[#6E6E73]">
-                    We're preparing four carefully designed themes, with
-                    options to personalize your page colors and appearance.
-                    Your live preview will update as you customize it.
-                  </p>
-
-                  <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {[
-                      {
-                        name: "Minimal",
-                        background: "bg-[#F5F5F7]",
-                        card: "bg-white",
-                      },
-                      {
-                        name: "Dark",
-                        background: "bg-[#242424]",
-                        card: "bg-[#414141]",
-                      },
-                      {
-                        name: "Soft",
-                        background: "bg-[#F5EDE7]",
-                        card: "bg-[#FFF9F4]",
-                      },
-                      {
-                        name: "Bold",
-                        background: "bg-[#E9E9FF]",
-                        card: "bg-[#FFFFFF]",
-                      },
-                    ].map((theme) => (
-                      <div key={theme.name}>
-                        <div
-                          className={`flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-xl border border-[#E8E8ED] p-3 ${theme.background}`}
+                      return (
+                        <button
+                          key={theme.value}
+                          type="button"
+                          onClick={() => setAppearance({ ...preset })}
+                          aria-pressed={isSelected}
+                          className={`rounded-xl p-2 text-left transition ${
+                            isSelected
+                              ? "ring-2 ring-[#0071E3] ring-offset-2"
+                              : "border border-[#E8E8ED] hover:border-[#B8B8C0]"
+                          }`}
                         >
-                          <div className="h-8 w-8 rounded-full bg-[#B8B8C0]" />
                           <div
-                            className={`h-3 w-full rounded-full ${theme.card}`}
-                          />
-                          <div
-                            className={`h-3 w-full rounded-full ${theme.card}`}
-                          />
-                          <div
-                            className={`h-3 w-3/4 rounded-full ${theme.card}`}
+                            className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-lg border border-black/5 p-3"
+                            style={{
+                              backgroundColor: preset.backgroundColor,
+                            }}
+                          >
+                            <div
+                              className="h-8 w-8 rounded-full"
+                              style={{ backgroundColor: preset.accentColor }}
+                            />
+                            <div
+                              className="h-3 w-full rounded-full"
+                              style={{ backgroundColor: preset.buttonColor }}
+                            />
+                            <div
+                              className="h-3 w-full rounded-full"
+                              style={{ backgroundColor: preset.buttonColor }}
+                            />
+                            <div
+                              className="h-3 w-3/4 rounded-full"
+                              style={{ backgroundColor: preset.buttonColor }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between px-1 pt-2">
+                            <span className="text-[13px] font-medium">
+                              {theme.name}
+                            </span>
+                            {isSelected && (
+                              <span className="text-[11px] font-medium text-[#0071E3]">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-[#E8E8ED] bg-white p-5 sm:p-6">
+                  <div className="mb-5">
+                    <h3 className="text-[16px] font-semibold">Customize colors</h3>
+                    <p className="mt-1 text-[13px] text-[#6E6E73]">
+                      Use the color picker or enter a hex color value.
+                    </p>
+                  </div>
+
+                  <div className="space-y-5">
+                    {COLOR_CONTROLS.map((control) => (
+                      <div
+                        key={control.key}
+                        className="flex items-center justify-between gap-4"
+                      >
+                        <div className="min-w-0">
+                          <label
+                            htmlFor={`appearance-${control.key}`}
+                            className="text-[14px] font-medium"
+                          >
+                            {control.label}
+                          </label>
+                          <p className="mt-1 text-[12px] leading-5 text-[#86868B]">
+                            {control.description}
+                          </p>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="hidden text-[12px] tabular-nums text-[#6E6E73] sm:inline">
+                            {appearance[control.key].toUpperCase()}
+                          </span>
+                          <input
+                            id={`appearance-${control.key}`}
+                            type="color"
+                            value={appearance[control.key]}
+                            onChange={(event) =>
+                              setAppearance((current) => ({
+                                ...current,
+                                [control.key]: event.target.value.toUpperCase(),
+                              }))
+                            }
+                            aria-label={`${control.label} color`}
+                            className="h-10 w-11 cursor-pointer rounded-lg border border-[#E5E5EA] bg-white p-1"
                           />
                         </div>
-                        <p className="mt-2 text-center text-[12px] font-medium text-[#6E6E73]">
-                          {theme.name}
-                        </p>
                       </div>
                     ))}
                   </div>
 
-                  <p className="mt-6 border-t border-[#E8E8ED] pt-4 text-[12px] text-[#86868B]">
-                    Theme selection and customization will be enabled in the
-                    next step.
-                  </p>
-                </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAppearance({ ...THEME_PRESETS[appearance.theme] })
+                    }
+                    className="mt-6 border-t border-[#E8E8ED] pt-4 text-[13px] font-medium text-[#0071E3] transition hover:text-[#0062C4]"
+                  >
+                    Reset colors to this theme
+                  </button>
+                </section>
               </div>
             )}
           </section>
@@ -561,7 +703,11 @@ const EditorPage = ({
             </span>
 
             <div className="min-h-[520px] w-full overflow-hidden rounded-3xl border border-[#E8E8ED] bg-white lg:h-[clamp(420px,calc(100dvh-14rem),640px)] lg:min-h-0 lg:w-[300px] lg:rounded-[44px] lg:border-[6px] lg:border-[#1D1D1F]">
-              <ProfilePreview profileData={profileData} links={links} />
+              <ProfilePreview
+                profileData={profileData}
+                links={links}
+                appearance={appearance}
+              />
             </div>
 
             <p className="text-[13px] text-[#6E6E73]">

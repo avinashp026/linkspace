@@ -1,7 +1,13 @@
 
 import { Suspense } from "react";
 import ProfilePreview from "@/features/editor/ProfilePreview";
-import { LinkData, ProfileData } from "@/features/editor/types";
+import {
+  DEFAULT_APPEARANCE,
+  type AppearanceData,
+  type LinkData,
+  type ProfileData,
+  type ThemeName,
+} from "@/features/editor/types";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
@@ -10,6 +16,13 @@ type PublicProfilePageProps = {
     username: string;
   }>;
 };
+
+const ALLOWED_THEMES: ThemeName[] = [
+  "minimal",
+  "dark",
+  "soft",
+  "bold",
+];
 
 async function PublicProfileContent({
   params,
@@ -20,7 +33,20 @@ async function PublicProfileContent({
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio")
+    .select(
+      `
+        id,
+        username,
+        display_name,
+        bio,
+        theme,
+        background_color,
+        text_color,
+        button_color,
+        button_text_color,
+        accent_color
+      `,
+    )
     .eq("username", username)
     .maybeSingle();
 
@@ -56,10 +82,35 @@ async function PublicProfileContent({
     url: link.url,
   }));
 
+  // Validate the theme and fall back to the default if necessary.
+  const theme: ThemeName = ALLOWED_THEMES.includes(
+    profile.theme as ThemeName,
+  )
+    ? (profile.theme as ThemeName)
+    : DEFAULT_APPEARANCE.theme;
+
+  // Load saved appearance settings, using defaults for missing values.
+  const appearance: AppearanceData = {
+    theme,
+    backgroundColor:
+      profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
+    textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
+    buttonColor:
+      profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
+    buttonTextColor:
+      profile.button_text_color ?? DEFAULT_APPEARANCE.buttonTextColor,
+    accentColor:
+      profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
+  };
+
   return (
     <main className="flex min-h-dvh justify-center bg-[#FBFBFD] px-4 py-8 sm:items-center sm:py-10">
       <div className="w-full max-w-[380px] overflow-hidden rounded-[32px] border border-[#E8E8ED] bg-white shadow-sm">
-        <ProfilePreview profileData={profileData} links={links} />
+        <ProfilePreview
+          profileData={profileData}
+          links={links}
+          appearance={appearance}
+        />
       </div>
     </main>
   );
