@@ -20,8 +20,8 @@ const Page = async () => {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      `username, display_name, bio, avatar_url, is_published, theme, background_color, text_color, button_color, button_text_color, accent_color`,
-    )
+  `username, display_name, bio, avatar_url, is_published, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color`,
+)
     .eq("id", userId)
     .maybeSingle();
 
@@ -59,19 +59,21 @@ const Page = async () => {
     : { username: "", displayName: "", bio: "", avatarUrl: null };
 
   const initialAppearance: AppearanceData = profile
-    ? {
-        theme: isThemeName(profile.theme)
-          ? profile.theme
-          : DEFAULT_APPEARANCE.theme,
-        backgroundColor:
-          profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
-        textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
-        buttonColor: profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
-        buttonTextColor:
-          profile.button_text_color ?? DEFAULT_APPEARANCE.buttonTextColor,
-        accentColor: profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
-      }
-    : DEFAULT_APPEARANCE;
+  ? {
+      theme: isThemeName(profile.theme)
+        ? profile.theme
+        : DEFAULT_APPEARANCE.theme,
+      backgroundColor:
+        profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
+      backgroundGradient:
+        profile.background_gradient ?? DEFAULT_APPEARANCE.backgroundGradient,
+      textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
+      buttonColor: profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
+      buttonTextColor:
+        profile.button_text_color ?? DEFAULT_APPEARANCE.buttonTextColor,
+      accentColor: profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
+    }
+  : DEFAULT_APPEARANCE;
 
   return (
     <EditorPage

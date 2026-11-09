@@ -19,8 +19,8 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      `id, username, display_name, bio, avatar_url, theme, background_color, text_color, button_color, button_text_color, accent_color`,
-    )
+  `id, username, display_name, bio, avatar_url, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color`,
+)
     .eq("username", username)
     .maybeSingle();
 
@@ -59,6 +59,8 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
     theme,
     backgroundColor:
       profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
+      backgroundGradient:
+  profile.background_gradient ?? DEFAULT_APPEARANCE.backgroundGradient,
     textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
     buttonColor: profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
     buttonTextColor:

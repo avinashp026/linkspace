@@ -6,6 +6,19 @@ type ProfilePreviewProps = {
   appearance: AppearanceData;
 };
 
+const GRADIENT_BACKGROUNDS: Record<
+  AppearanceData["backgroundGradient"],
+  string | undefined
+> = {
+  none: undefined,
+  sunset: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
+  ocean: "linear-gradient(135deg, #2193b0, #6dd5ed)",
+  lavender: "linear-gradient(135deg, #c471f5, #fa71cd)",
+  mint: "linear-gradient(135deg, #11998e, #a8e6cf)",
+  peach: "linear-gradient(135deg, #ffb88c, #de6262)",
+  midnight: "linear-gradient(135deg, #232526, #414345)",
+};
+
 const ProfilePreview = ({
   profileData,
   links,
@@ -16,6 +29,7 @@ const ProfilePreview = ({
       className="flex min-h-full flex-col items-center px-5 pb-5 pt-10 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-12 lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
       style={{
         backgroundColor: appearance.backgroundColor,
+        backgroundImage: GRADIENT_BACKGROUNDS[appearance.backgroundGradient],
         color: appearance.textColor,
       }}
     >
@@ -38,9 +52,11 @@ const ProfilePreview = ({
           "U"
         )}
       </div>
+
       <h2 className="mt-3 max-w-full break-words text-center text-xl font-semibold">
         {profileData.displayName || "Your name"}
       </h2>
+
       {profileData.bio && (
         <p
           className="mt-1 max-w-full whitespace-pre-wrap break-words text-center text-[13px] leading-5"
@@ -49,6 +65,7 @@ const ProfilePreview = ({
           {profileData.bio}
         </p>
       )}
+
       <div className="mt-6 flex w-full flex-col gap-2.5">
         {links.map((link) => (
           <a
@@ -67,11 +84,13 @@ const ProfilePreview = ({
           </a>
         ))}
       </div>
+
       {links.length === 0 && (
         <p className="mt-8 text-center text-[13px]" style={{ opacity: 0.6 }}>
           Your links will appear here.
         </p>
       )}
+
       <div
         className="mt-auto pt-6 text-[10px] font-medium tracking-widest"
         style={{ opacity: 0.6 }}

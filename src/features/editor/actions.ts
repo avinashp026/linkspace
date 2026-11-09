@@ -31,6 +31,15 @@ const MAX_URL_LENGTH = 2048;
 
 type EditorAppearanceInput = AppearanceData;
 const ALLOWED_THEMES = ["minimal", "dark", "soft", "bold"];
+const ALLOWED_GRADIENTS = [
+  "none",
+  "sunset",
+  "ocean",
+  "lavender",
+  "mint",
+  "peach",
+  "midnight",
+] as const;
 const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 export const saveProfile = async (profileData: {
@@ -487,13 +496,14 @@ export const saveAllEditorData = async (
   // 3. Validate appearance settings
   if (
     !appearance ||
-    typeof appearance !== "object" ||
-    !ALLOWED_THEMES.includes(appearance.theme) ||
-    !HEX_COLOR_REGEX.test(appearance.backgroundColor) ||
-    !HEX_COLOR_REGEX.test(appearance.textColor) ||
-    !HEX_COLOR_REGEX.test(appearance.buttonColor) ||
-    !HEX_COLOR_REGEX.test(appearance.buttonTextColor) ||
-    !HEX_COLOR_REGEX.test(appearance.accentColor)
+  typeof appearance !== "object" ||
+  !ALLOWED_THEMES.includes(appearance.theme) ||
+  !ALLOWED_GRADIENTS.includes(appearance.backgroundGradient) ||
+  !HEX_COLOR_REGEX.test(appearance.backgroundColor) ||
+  !HEX_COLOR_REGEX.test(appearance.textColor) ||
+  !HEX_COLOR_REGEX.test(appearance.buttonColor) ||
+  !HEX_COLOR_REGEX.test(appearance.buttonTextColor) ||
+  !HEX_COLOR_REGEX.test(appearance.accentColor)
   ) {
     return {
       success: false as const,
@@ -625,6 +635,7 @@ export const saveAllEditorData = async (
       // Appearance settings
       theme: appearance.theme,
       background_color: appearance.backgroundColor,
+      background_gradient: appearance.backgroundGradient,
       text_color: appearance.textColor,
       button_color: appearance.buttonColor,
       button_text_color: appearance.buttonTextColor,

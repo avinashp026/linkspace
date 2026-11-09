@@ -13,6 +13,7 @@ import {
   type LinkData,
   type ProfileData,
   type ThemeName,
+  type GradientName,
 } from "./types";
 import Header from "@/components/Header";
 import { saveAllEditorData, setProfilePublished } from "./actions";
@@ -42,6 +43,7 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonColor: "#1D1D1F",
     buttonTextColor: "#FFFFFF",
     accentColor: "#0071E3",
+    backgroundGradient: "none",
   },
   dark: {
     theme: "dark",
@@ -50,6 +52,7 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonColor: "#374151",
     buttonTextColor: "#FFFFFF",
     accentColor: "#A78BFA",
+    backgroundGradient: "none",
   },
   soft: {
     theme: "soft",
@@ -58,6 +61,7 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonColor: "#FED7AA",
     buttonTextColor: "#7C2D12",
     accentColor: "#F97316",
+    backgroundGradient: "none",
   },
   bold: {
     theme: "bold",
@@ -66,11 +70,12 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonColor: "#BE185D",
     buttonTextColor: "#FFFFFF",
     accentColor: "#7C3AED",
+    backgroundGradient: "none",
   },
 };
 
 const COLOR_CONTROLS: {
-  key: keyof Omit<AppearanceData, "theme">;
+  key: keyof Omit<AppearanceData, "theme" | "backgroundGradient">;
   label: string;
   description: string;
 }[] = [
@@ -98,6 +103,48 @@ const COLOR_CONTROLS: {
     key: "accentColor",
     label: "Accent",
     description: "Your profile avatar and focus accents.",
+  },
+];
+
+const GRADIENT_PRESETS: {
+  name: string;
+  value: GradientName;
+  css: string;
+}[] = [
+  {
+    name: "Solid color",
+    value: "none",
+    css: "linear-gradient(135deg, #FFFFFF, #FFFFFF)",
+  },
+  {
+    name: "Sunset",
+    value: "sunset",
+    css: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
+  },
+  {
+    name: "Ocean",
+    value: "ocean",
+    css: "linear-gradient(135deg, #2193b0, #6dd5ed)",
+  },
+  {
+    name: "Lavender",
+    value: "lavender",
+    css: "linear-gradient(135deg, #c471f5, #fa71cd)",
+  },
+  {
+    name: "Mint",
+    value: "mint",
+    css: "linear-gradient(135deg, #11998e, #a8e6cf)",
+  },
+  {
+    name: "Peach",
+    value: "peach",
+    css: "linear-gradient(135deg, #ffb88c, #de6262)",
+  },
+  {
+    name: "Midnight",
+    value: "midnight",
+    css: "linear-gradient(135deg, #232526, #414345)",
   },
 ];
 
@@ -634,6 +681,59 @@ const EditorPage = ({
                               </span>
                             )}
                           </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="mb-6 rounded-2xl border border-[#E8E8ED] bg-white p-5 sm:p-6">
+                  <div className="mb-4">
+                    <h3 className="text-[16px] font-semibold">
+                      Background gradients
+                    </h3>
+                    <p className="mt-1 text-[13px] text-[#6E6E73]">
+                      Choose a gradient for your profile background, or return
+                      to your solid background color.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {GRADIENT_PRESETS.map((gradient) => {
+                      const selected =
+                        appearance.backgroundGradient === gradient.value;
+                      return (
+                        <button
+                          key={gradient.value}
+                          type="button"
+                          onClick={() =>
+                            setAppearance((current) => ({
+                              ...current,
+                              backgroundGradient: gradient.value,
+                            }))
+                          }
+                          aria-pressed={selected}
+                          className={`overflow-hidden rounded-xl text-left transition ${
+                            selected
+                              ? "ring-2 ring-[#0071E3] ring-offset-2"
+                              : "border border-[#E8E8ED] hover:border-[#B8B8C0]"
+                          }`}
+                        >
+                          <span
+                            className="block h-16 w-full"
+                            style={{
+                              background:
+                                gradient.value === "none"
+                                  ? appearance.backgroundColor
+                                  : gradient.css,
+                            }}
+                          />
+                          <span className="flex items-center justify-between px-3 py-2 text-[13px] font-medium">
+                            {gradient.name}
+                            {selected && (
+                              <span className="text-[#0071E3]">Selected</span>
+                            )}
+                          </span>
                         </button>
                       );
                     })}

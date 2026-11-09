@@ -13,6 +13,15 @@ export type LinkData = {
 
 export type ThemeName = "minimal" | "dark" | "soft" | "bold";
 
+export type GradientName =
+  | "none"
+  | "sunset"
+  | "ocean"
+  | "lavender"
+  | "mint"
+  | "peach"
+  | "midnight";
+
 export type AppearanceData = {
   theme: ThemeName;
   backgroundColor: string;
@@ -20,6 +29,7 @@ export type AppearanceData = {
   buttonColor: string;
   buttonTextColor: string;
   accentColor: string;
+  backgroundGradient: GradientName;
 };
 
 export const DEFAULT_APPEARANCE: AppearanceData = {
@@ -29,4 +39,5 @@ export const DEFAULT_APPEARANCE: AppearanceData = {
   buttonColor: "#1D1D1D",
   buttonTextColor: "#FFFFFF",
   accentColor: "#0071E3",
+  backgroundGradient: "none",
 };
