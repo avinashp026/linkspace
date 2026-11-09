@@ -6,21 +6,30 @@ import {
   type LinkData,
   type ProfileData,
   type ThemeName,
+  type GradientDirection,
 } from "@/features/editor/types";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
 type PublicProfilePageProps = { params: Promise<{ username: string }> };
+
 const ALLOWED_THEMES: ThemeName[] = ["minimal", "dark", "soft", "bold"];
+
+const ALLOWED_GRADIENT_DIRECTIONS: GradientDirection[] = [
+  "diagonal",
+  "horizontal",
+  "vertical",
+];
 
 async function PublicProfileContent({ params }: PublicProfilePageProps) {
   const { username } = await params;
   const supabase = await createClient();
+
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-  `id, username, display_name, bio, avatar_url, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color`,
-)
+      `id, username, display_name, bio, avatar_url, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color, gradient_color_1, gradient_color_2, gradient_direction`,
+    )
     .eq("username", username)
     .maybeSingle();
 
@@ -28,6 +37,7 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
     console.error("Unable to load public profile:", profileError.message);
     throw new Error("Unable to load this profile");
   }
+
   if (!profile) notFound();
 
   const { data: databaseLinks, error: linksError } = await supabase
@@ -47,20 +57,35 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
     bio: profile.bio ?? "",
     avatarUrl: profile.avatar_url ?? null,
   };
+
   const links: LinkData[] = (databaseLinks ?? []).map((link) => ({
     id: link.id,
     title: link.title,
     url: link.url,
   }));
+
   const theme: ThemeName = ALLOWED_THEMES.includes(profile.theme as ThemeName)
     ? (profile.theme as ThemeName)
     : DEFAULT_APPEARANCE.theme;
+
+  const gradientDirection: GradientDirection =
+    ALLOWED_GRADIENT_DIRECTIONS.includes(
+      profile.gradient_direction as GradientDirection,
+    )
+      ? (profile.gradient_direction as GradientDirection)
+      : DEFAULT_APPEARANCE.gradientDirection;
+
   const appearance: AppearanceData = {
     theme,
     backgroundColor:
       profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
-      backgroundGradient:
-  profile.background_gradient ?? DEFAULT_APPEARANCE.backgroundGradient,
+    backgroundGradient:
+      profile.background_gradient ?? DEFAULT_APPEARANCE.backgroundGradient,
+    gradientColor1:
+      profile.gradient_color_1 ?? DEFAULT_APPEARANCE.gradientColor1,
+    gradientColor2:
+      profile.gradient_color_2 ?? DEFAULT_APPEARANCE.gradientColor2,
+    gradientDirection,
     textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
     buttonColor: profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
     buttonTextColor:

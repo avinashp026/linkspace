@@ -1,3 +1,4 @@
+
 export type ProfileData = {
   username: string;
   displayName: string;
@@ -22,6 +23,11 @@ export type GradientName =
   | "peach"
   | "midnight";
 
+export type GradientDirection =
+  | "diagonal"
+  | "horizontal"
+  | "vertical";
+
 export type AppearanceData = {
   theme: ThemeName;
   backgroundColor: string;
@@ -30,14 +36,20 @@ export type AppearanceData = {
   buttonTextColor: string;
   accentColor: string;
   backgroundGradient: GradientName;
+  gradientColor1: string;
+  gradientColor2: string;
+  gradientDirection: GradientDirection;
 };
 
 export const DEFAULT_APPEARANCE: AppearanceData = {
   theme: "minimal",
   backgroundColor: "#FFFFFF",
   textColor: "#1D1D1F",
-  buttonColor: "#1D1D1D",
+  buttonColor: "#1D1D1F",
   buttonTextColor: "#FFFFFF",
   accentColor: "#0071E3",
   backgroundGradient: "none",
+  gradientColor1: "#FFFFFF",
+  gradientColor2: "#FFFFFF",
+  gradientDirection: "diagonal",
 };

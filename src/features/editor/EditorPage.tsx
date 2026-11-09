@@ -44,6 +44,9 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonTextColor: "#FFFFFF",
     accentColor: "#0071E3",
     backgroundGradient: "none",
+    gradientColor1: "#FFFFFF",
+    gradientColor2: "#FFFFFF",
+    gradientDirection: "diagonal",
   },
   dark: {
     theme: "dark",
@@ -53,6 +56,9 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonTextColor: "#FFFFFF",
     accentColor: "#A78BFA",
     backgroundGradient: "none",
+    gradientColor1: "#FFFFFF",
+    gradientColor2: "#FFFFFF",
+    gradientDirection: "diagonal",
   },
   soft: {
     theme: "soft",
@@ -62,6 +68,9 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonTextColor: "#7C2D12",
     accentColor: "#F97316",
     backgroundGradient: "none",
+    gradientColor1: "#FFFFFF",
+    gradientColor2: "#FFFFFF",
+    gradientDirection: "diagonal",
   },
   bold: {
     theme: "bold",
@@ -71,11 +80,21 @@ const THEME_PRESETS: Record<ThemeName, AppearanceData> = {
     buttonTextColor: "#FFFFFF",
     accentColor: "#7C3AED",
     backgroundGradient: "none",
+    gradientColor1: "#FFFFFF",
+    gradientColor2: "#FFFFFF",
+    gradientDirection: "diagonal",
   },
 };
 
 const COLOR_CONTROLS: {
-  key: keyof Omit<AppearanceData, "theme" | "backgroundGradient">;
+  key: keyof Omit<
+    AppearanceData,
+    | "theme"
+    | "backgroundGradient"
+    | "gradientColor1"
+    | "gradientColor2"
+    | "gradientDirection"
+  >;
   label: string;
   description: string;
 }[] = [
@@ -110,41 +129,57 @@ const GRADIENT_PRESETS: {
   name: string;
   value: GradientName;
   css: string;
+  color1: string;
+  color2: string;
 }[] = [
   {
     name: "Solid color",
     value: "none",
     css: "linear-gradient(135deg, #FFFFFF, #FFFFFF)",
+    color1: "#FFFFFF",
+    color2: "#FFFFFF",
   },
   {
     name: "Sunset",
     value: "sunset",
     css: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
+    color1: "#FF9A9E",
+    color2: "#FAD0C4",
   },
   {
     name: "Ocean",
     value: "ocean",
     css: "linear-gradient(135deg, #2193b0, #6dd5ed)",
+    color1: "#2193B0",
+    color2: "#6DD5ED",
   },
   {
     name: "Lavender",
     value: "lavender",
     css: "linear-gradient(135deg, #c471f5, #fa71cd)",
+    color1: "#C471F5",
+    color2: "#FA71CD",
   },
   {
     name: "Mint",
     value: "mint",
     css: "linear-gradient(135deg, #11998e, #a8e6cf)",
+    color1: "#11998E",
+    color2: "#A8E6CF",
   },
   {
     name: "Peach",
     value: "peach",
     css: "linear-gradient(135deg, #ffb88c, #de6262)",
+    color1: "#FFB88C",
+    color2: "#DE6262",
   },
   {
     name: "Midnight",
     value: "midnight",
     css: "linear-gradient(135deg, #232526, #414345)",
+    color1: "#232526",
+    color2: "#414345",
   },
 ];
 
@@ -710,6 +745,9 @@ const EditorPage = ({
                             setAppearance((current) => ({
                               ...current,
                               backgroundGradient: gradient.value,
+                              gradientColor1: gradient.color1,
+                              gradientColor2: gradient.color2,
+                              gradientDirection: "diagonal",
                             }))
                           }
                           aria-pressed={selected}
@@ -750,8 +788,83 @@ const EditorPage = ({
                     </p>
                   </div>
 
+                    
+<div className="mb-6 rounded-xl bg-[#F7F7F9] p-4">
+  <h4 className="mb-3 text-[14px] font-semibold">
+    Custom gradient
+  </h4>
+
+  <div className="space-y-4">
+    {([
+      { key: "gradientColor1", label: "First color" },
+      { key: "gradientColor2", label: "Second color" },
+    ] as const
+  ).map((color) => (
+      <div
+        key={color.key}
+        className="flex items-center justify-between gap-4"
+      >
+        <label
+          htmlFor={color.key}
+          className="text-[13px] font-medium"
+        >
+          {color.label}
+        </label>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] text-[#6E6E73]">
+            {appearance[color.key].toUpperCase()}
+          </span>
+
+          <input
+            id={color.key}
+            type="color"
+            value={appearance[color.key]}
+            onChange={(event) =>
+              setAppearance((current) => ({
+                ...current,
+                [color.key]: event.target.value.toUpperCase(),
+              }))
+            }
+            className="h-10 w-11 cursor-pointer rounded-lg border border-[#E5E5EA] bg-white p-1"
+          />
+        </div>
+      </div>
+    ))}
+
+    <div>
+      <label
+        htmlFor="gradient-direction"
+        className="mb-2 block text-[13px] font-medium"
+      >
+        Gradient direction
+      </label>
+
+      <select
+        id="gradient-direction"
+        value={appearance.gradientDirection}
+        onChange={(event) =>
+          setAppearance((current) => ({
+            ...current,
+            gradientDirection: event.target.value as
+              | "diagonal"
+              | "horizontal"
+              | "vertical",
+          }))
+        }
+        className="h-11 w-full rounded-lg border border-[#E5E5EA] bg-white px-3 text-[14px] outline-none focus:border-[#0071E3]"
+      >
+        <option value="diagonal">Diagonal</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+      </select>
+    </div>
+  </div>
+</div>
+
                   <div className="space-y-5">
                     {COLOR_CONTROLS.map((control) => (
+                      
                       <div
                         key={control.key}
                         className="flex items-center justify-between gap-4"
