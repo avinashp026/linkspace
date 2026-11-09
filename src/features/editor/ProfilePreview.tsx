@@ -1,9 +1,4 @@
-
-import type {
-  AppearanceData,
-  LinkData,
-  ProfileData,
-} from "./types";
+import type { AppearanceData, LinkData, ProfileData } from "./types";
 
 type ProfilePreviewProps = {
   profileData: ProfileData;
@@ -25,21 +20,27 @@ const ProfilePreview = ({
       }}
     >
       <div
-        className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full text-[28px] font-semibold"
+        className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[28px] font-semibold"
         style={{
           backgroundColor: appearance.accentColor,
           color: appearance.buttonTextColor,
         }}
       >
-        {profileData.displayName
-          ? profileData.displayName[0].toUpperCase()
-          : "U"}
+        {profileData.avatarUrl ? (
+          <img
+            src={profileData.avatarUrl}
+            alt={`${profileData.displayName || "Profile"} profile picture`}
+            className="h-full w-full object-cover"
+          />
+        ) : profileData.displayName ? (
+          profileData.displayName[0].toUpperCase()
+        ) : (
+          "U"
+        )}
       </div>
-
       <h2 className="mt-3 max-w-full break-words text-center text-xl font-semibold">
         {profileData.displayName || "Your name"}
       </h2>
-
       {profileData.bio && (
         <p
           className="mt-1 max-w-full whitespace-pre-wrap break-words text-center text-[13px] leading-5"
@@ -48,7 +49,6 @@ const ProfilePreview = ({
           {profileData.bio}
         </p>
       )}
-
       <div className="mt-6 flex w-full flex-col gap-2.5">
         {links.map((link) => (
           <a
@@ -67,13 +67,11 @@ const ProfilePreview = ({
           </a>
         ))}
       </div>
-
       {links.length === 0 && (
         <p className="mt-8 text-center text-[13px]" style={{ opacity: 0.6 }}>
           Your links will appear here.
         </p>
       )}
-
       <div
         className="mt-auto pt-6 text-[10px] font-medium tracking-widest"
         style={{ opacity: 0.6 }}

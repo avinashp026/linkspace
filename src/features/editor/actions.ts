@@ -9,6 +9,7 @@ type EditorProfileInput = {
   username: string;
   displayName: string;
   bio: string;
+  avatarUrl?: string | null;
 };
 
 type EditorLinkInput = {
@@ -437,6 +438,28 @@ export const saveAllEditorData = async (
   const username = profileData.username.trim();
   const displayName = profileData.displayName.trim();
   const bio = profileData.bio.trim();
+  const avatarUrl = profileData.avatarUrl ?? null;
+
+  if (avatarUrl !== null) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(
+      /\/$/,
+      "",
+    );
+    const expectedAvatarPrefix = `${supabaseUrl}/storage/v1/object/public/profile-assets/${user.id}/avatar/`;
+
+    if (
+      typeof avatarUrl !== "string" ||
+      avatarUrl.length > 2048 ||
+      !supabaseUrl ||
+      !avatarUrl.startsWith(expectedAvatarPrefix) ||
+      !/\.(jpg|png|webp)$/i.test(avatarUrl)
+    ) {
+      return {
+        success: false as const,
+        error: "Invalid profile picture. Please upload it again.",
+      };
+    }
+  }
 
   const usernameError = validateUsername(username);
 
@@ -606,8 +629,7 @@ export const saveAllEditorData = async (
       button_color: appearance.buttonColor,
       button_text_color: appearance.buttonTextColor,
       accent_color: appearance.accentColor,
-
-      
+      avatar_url: avatarUrl,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },

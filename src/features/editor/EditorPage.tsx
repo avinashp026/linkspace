@@ -162,6 +162,13 @@ const EditorPage = ({
     }));
   };
 
+  const handleAvatarChange = (avatarUrl: string | null) => {
+    setProfileData((prev) => ({
+      ...prev,
+      avatarUrl,
+    }));
+  };
+
   const validateLink = (title: string, url: string): ValidatedLink => {
     const trimmedTitle = title.trim();
     const trimmedUrl = url.trim();
@@ -529,6 +536,7 @@ const EditorPage = ({
                 <ProfileForm
                   profileData={profileData}
                   handleChange={handleChange}
+                  onAvatarChange={handleAvatarChange}
                   links={links}
                   onEdit={startEditingLink}
                   onDelete={deleteLink}
@@ -560,7 +568,9 @@ const EditorPage = ({
 
                 <section className="mb-6 rounded-2xl border border-[#E8E8ED] bg-white p-5 sm:p-6">
                   <div className="mb-4">
-                    <h3 className="text-[16px] font-semibold">Choose a theme</h3>
+                    <h3 className="text-[16px] font-semibold">
+                      Choose a theme
+                    </h3>
                     <p className="mt-1 text-[13px] text-[#6E6E73]">
                       Selecting a theme applies its color palette. You can
                       customize every color below.
@@ -632,7 +642,9 @@ const EditorPage = ({
 
                 <section className="rounded-2xl border border-[#E8E8ED] bg-white p-5 sm:p-6">
                   <div className="mb-5">
-                    <h3 className="text-[16px] font-semibold">Customize colors</h3>
+                    <h3 className="text-[16px] font-semibold">
+                      Customize colors
+                    </h3>
                     <p className="mt-1 text-[13px] text-[#6E6E73]">
                       Use the color picker or enter a hex color value.
                     </p>

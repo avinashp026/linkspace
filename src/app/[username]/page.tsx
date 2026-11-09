@@ -1,4 +1,3 @@
-
 import { Suspense } from "react";
 import ProfilePreview from "@/features/editor/ProfilePreview";
 import {
@@ -11,41 +10,16 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
-type PublicProfilePageProps = {
-  params: Promise<{
-    username: string;
-  }>;
-};
+type PublicProfilePageProps = { params: Promise<{ username: string }> };
+const ALLOWED_THEMES: ThemeName[] = ["minimal", "dark", "soft", "bold"];
 
-const ALLOWED_THEMES: ThemeName[] = [
-  "minimal",
-  "dark",
-  "soft",
-  "bold",
-];
-
-async function PublicProfileContent({
-  params,
-}: PublicProfilePageProps) {
+async function PublicProfileContent({ params }: PublicProfilePageProps) {
   const { username } = await params;
-
   const supabase = await createClient();
-
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      `
-        id,
-        username,
-        display_name,
-        bio,
-        theme,
-        background_color,
-        text_color,
-        button_color,
-        button_text_color,
-        accent_color
-      `,
+      `id, username, display_name, bio, avatar_url, theme, background_color, text_color, button_color, button_text_color, accent_color`,
     )
     .eq("username", username)
     .maybeSingle();
@@ -54,10 +28,7 @@ async function PublicProfileContent({
     console.error("Unable to load public profile:", profileError.message);
     throw new Error("Unable to load this profile");
   }
-
-  if (!profile) {
-    notFound();
-  }
+  if (!profile) notFound();
 
   const { data: databaseLinks, error: linksError } = await supabase
     .from("links")
@@ -74,33 +45,25 @@ async function PublicProfileContent({
     username: profile.username,
     displayName: profile.display_name,
     bio: profile.bio ?? "",
+    avatarUrl: profile.avatar_url ?? null,
   };
-
   const links: LinkData[] = (databaseLinks ?? []).map((link) => ({
     id: link.id,
     title: link.title,
     url: link.url,
   }));
-
-  // Validate the theme and fall back to the default if necessary.
-  const theme: ThemeName = ALLOWED_THEMES.includes(
-    profile.theme as ThemeName,
-  )
+  const theme: ThemeName = ALLOWED_THEMES.includes(profile.theme as ThemeName)
     ? (profile.theme as ThemeName)
     : DEFAULT_APPEARANCE.theme;
-
-  // Load saved appearance settings, using defaults for missing values.
   const appearance: AppearanceData = {
     theme,
     backgroundColor:
       profile.background_color ?? DEFAULT_APPEARANCE.backgroundColor,
     textColor: profile.text_color ?? DEFAULT_APPEARANCE.textColor,
-    buttonColor:
-      profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
+    buttonColor: profile.button_color ?? DEFAULT_APPEARANCE.buttonColor,
     buttonTextColor:
       profile.button_text_color ?? DEFAULT_APPEARANCE.buttonTextColor,
-    accentColor:
-      profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
+    accentColor: profile.accent_color ?? DEFAULT_APPEARANCE.accentColor,
   };
 
   return (
