@@ -1,6 +1,8 @@
+
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import EditorPage from "@/features/editor/EditorPage";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import {
   DEFAULT_APPEARANCE,
   type AppearanceData,
@@ -16,12 +18,15 @@ const isGradientDirection = (
 ): value is GradientDirection =>
   ["diagonal", "horizontal", "vertical"].includes(value);
 
-const Page = async () => {
+async function EditorContent() {
   const supabase = await createClient();
+
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
 
-  if (error || typeof userId !== "string") redirect("/login");
+  if (error || typeof userId !== "string") {
+    redirect("/login");
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -64,7 +69,12 @@ const Page = async () => {
         bio: profile.bio ?? "",
         avatarUrl: profile.avatar_url ?? null,
       }
-    : { username: "", displayName: "", bio: "", avatarUrl: null };
+    : {
+        username: "",
+        displayName: "",
+        bio: "",
+        avatarUrl: null,
+      };
 
   const initialAppearance: AppearanceData = profile
     ? {
@@ -98,6 +108,26 @@ const Page = async () => {
       initialAppearance={initialAppearance}
     />
   );
-};
+}
 
-export default Page;
+function EditorFallback() {
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-7xl animate-pulse space-y-6">
+        <div className="h-14 rounded-xl bg-muted-background" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="h-[600px] rounded-xl bg-muted-background" />
+          <div className="hidden h-[600px] rounded-xl bg-muted-background lg:block" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<EditorFallback />}>
+      <EditorContent />
+    </Suspense>
+  );
+}
