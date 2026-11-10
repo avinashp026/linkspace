@@ -1,3 +1,4 @@
+
 import { Suspense } from "react";
 import ProfilePreview from "@/features/editor/ProfilePreview";
 import {
@@ -11,7 +12,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
-type PublicProfilePageProps = { params: Promise<{ username: string }> };
+type PublicProfilePageProps = {
+  params: Promise<{ username: string }>;
+};
 
 const ALLOWED_THEMES: ThemeName[] = ["minimal", "dark", "soft", "bold"];
 
@@ -28,7 +31,7 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      `id, username, display_name, bio, avatar_url, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color, gradient_color_1, gradient_color_2, gradient_direction`,
+      `id, username, display_name, bio, avatar_url, is_published, theme, background_color, background_gradient, text_color, button_color, button_text_color, accent_color, gradient_color_1, gradient_color_2, gradient_direction`,
     )
     .eq("username", username)
     .maybeSingle();
@@ -38,7 +41,9 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
     throw new Error("Unable to load this profile");
   }
 
-  if (!profile) notFound();
+  if (!profile || !profile.is_published) {
+    notFound();
+  }
 
   const { data: databaseLinks, error: linksError } = await supabase
     .from("links")
@@ -94,12 +99,13 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
   };
 
   return (
-    <main className="flex min-h-dvh justify-center bg-[#FBFBFD] px-4 py-8 sm:items-center sm:py-10">
-      <div className="w-full max-w-[380px] overflow-hidden rounded-[32px] border border-[#E8E8ED] bg-white shadow-sm">
+    <main className="flex min-h-dvh justify-center bg-background px-4 py-8 sm:items-center sm:py-10">
+      <div className="w-full max-w-[380px] overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
         <ProfilePreview
           profileData={profileData}
           links={links}
           appearance={appearance}
+          showEmptyState={false}
         />
       </div>
     </main>
@@ -108,8 +114,8 @@ async function PublicProfileContent({ params }: PublicProfilePageProps) {
 
 function ProfileLoading() {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#FBFBFD] px-4 py-8">
-      <div className="h-96 w-full max-w-[380px] animate-pulse rounded-[32px] bg-gray-200" />
+    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-8">
+      <div className="h-96 w-full max-w-[380px] animate-pulse rounded-3xl bg-muted-background" />
     </main>
   );
 }

@@ -5,6 +5,7 @@ type ProfilePreviewProps = {
   profileData: ProfileData;
   links: LinkData[];
   appearance: AppearanceData;
+  showEmptyState?: boolean;
 };
 
 const GRADIENT_DIRECTIONS: Record<
@@ -20,6 +21,7 @@ const ProfilePreview = ({
   profileData,
   links,
   appearance,
+  showEmptyState = true,
 }: ProfilePreviewProps) => {
   const backgroundImage =
     appearance.backgroundGradient === "none"
@@ -29,6 +31,9 @@ const ProfilePreview = ({
           ${appearance.gradientColor1},
           ${appearance.gradientColor2}
         )`;
+
+  const displayName =
+    profileData.displayName || profileData.username || "Your Name";
 
   return (
     <div
@@ -42,23 +47,26 @@ const ProfilePreview = ({
       {profileData.avatarUrl ? (
         <img
           src={profileData.avatarUrl}
-          alt={`${profileData.displayName || profileData.username}'s profile`}
+          alt={`${displayName}'s profile`}
+          loading="lazy"
+          decoding="async"
           className="mb-4 h-24 w-24 rounded-full object-cover"
         />
       ) : (
-        <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-black/10 text-3xl font-semibold">
-          {(profileData.displayName || profileData.username || "?")
-            .charAt(0)
-            .toUpperCase()}
+        <div
+          aria-hidden="true"
+          className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-black/10 text-3xl font-semibold"
+        >
+          {displayName.charAt(0).toUpperCase()}
         </div>
       )}
 
-      <h1 className="text-center text-xl font-semibold">
-        {profileData.displayName || profileData.username || "Your Name"}
+      <h1 className="max-w-full text-center text-xl font-semibold break-words">
+        {displayName}
       </h1>
 
       {profileData.bio && (
-        <p className="mt-2 max-w-xs text-center text-sm opacity-80">
+        <p className="mt-2 max-w-xs text-center text-sm break-words opacity-80">
           {profileData.bio}
         </p>
       )}
@@ -70,7 +78,7 @@ const ProfilePreview = ({
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-12 items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-medium transition-opacity hover:opacity-80"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-medium break-words transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
             style={{
               backgroundColor: appearance.buttonColor,
               color: appearance.buttonTextColor,
@@ -80,7 +88,7 @@ const ProfilePreview = ({
           </a>
         ))}
 
-        {links.length === 0 && (
+        {showEmptyState && links.length === 0 && (
           <p className="py-6 text-center text-sm opacity-50">
             Your links will appear here
           </p>
