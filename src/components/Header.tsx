@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { logout } from "@/app/logout/actions";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   Save,
   Send,
@@ -136,41 +137,50 @@ const Header = ({
             />
 
             <button
-              type="button"
-              onClick={onSave}
-              disabled={isBusy || !hasUnsavedChanges}
-              aria-label={isSaving ? "Saving changes" : "Save changes"}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-muted-background disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:gap-2 sm:px-4"
-            >
-              <Save size={17} strokeWidth={1.8} />
-              <span className="hidden text-sm font-medium sm:inline">
-                {isSaving ? "Saving..." : "Save"}
-              </span>
-            </button>
+  type="button"
+  onClick={onSave}
+  disabled={isBusy || !hasUnsavedChanges}
+  aria-label={isSaving ? "Saving changes" : "Save changes"}
+  className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-muted-background disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:gap-2 sm:px-4"
+>
+  {isSaving ? (
+    <LoadingSpinner size="md" />
+  ) : (
+    <Save size={17} strokeWidth={1.8} />
+  )}
+
+  <span className="hidden text-sm font-medium sm:inline">
+    Save
+  </span>
+</button>
 
             <button
-              type="button"
-              onClick={onPublishToggle}
-              disabled={isBusy}
-              aria-label={isPublished ? "Unpublish page" : "Publish page"}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:gap-2 sm:px-4"
-            >
-              {isPublished ? (
-                <EyeOff size={17} strokeWidth={1.8} />
-              ) : (
-                <Send size={17} strokeWidth={1.8} />
-              )}
+  type="button"
+  onClick={onPublishToggle}
+  disabled={isBusy}
+  aria-label={
+    isPublishing
+      ? isPublished
+        ? "Unpublishing page"
+        : "Publishing page"
+      : isPublished
+        ? "Unpublish page"
+        : "Publish page"
+  }
+  className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:gap-2 sm:px-4"
+>
+  {isPublishing ? (
+    <LoadingSpinner size="md" />
+  ) : isPublished ? (
+    <EyeOff size={17} strokeWidth={1.8} />
+  ) : (
+    <Send size={17} strokeWidth={1.8} />
+  )}
 
-              <span className="hidden text-sm font-medium sm:inline">
-                {isPublishing
-                  ? isPublished
-                    ? "Unpublishing..."
-                    : "Publishing..."
-                  : isPublished
-                    ? "Unpublish"
-                    : "Publish"}
-              </span>
-            </button>
+  <span className="hidden text-sm font-medium sm:inline">
+    {isPublished ? "Unpublish" : "Publish"}
+  </span>
+</button>
 
             <div className="relative" ref={menuRef}>
               <button

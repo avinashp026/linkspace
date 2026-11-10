@@ -193,3 +193,35 @@ button:disabled {
 .editor-scroll::-webkit-scrollbar-thumb:hover {
   background-color: var(--gray-500);
 }
+
+
+/* Skeleton loading */
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.skeleton {
+  background-color: var(--gray-200);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* Circular loading spinner */
+
+.loading-spinner-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-width: 2.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .loading-spinner {
+    animation-duration: 1.5s;
+  }
+}
