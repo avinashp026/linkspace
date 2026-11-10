@@ -1,7 +1,9 @@
 
 "use client";
 
+import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type {
   AppearanceData,
   GradientName,
@@ -165,6 +167,12 @@ export default function AppearanceEditor({
   appearance,
   setAppearance,
 }: AppearanceEditorProps) {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+function handleResetColors() {
+  setAppearance({ ...THEME_PRESETS[appearance.theme] });
+  setShowResetConfirm(false);
+}
   return (
     <div className="pb-10">
       <div className="mb-7">
@@ -423,14 +431,22 @@ export default function AppearanceEditor({
         </div>
 
         <button
-          type="button"
-          onClick={() =>
-            setAppearance({ ...THEME_PRESETS[appearance.theme] })
-          }
-          className="mt-6 border-t border-border pt-4 text-[13px] font-medium text-primary transition hover:text-primary-700"
-        >
-          Reset colors to this theme
-        </button>
+  type="button"
+  onClick={() => setShowResetConfirm(true)}
+  className="mt-6 border-t border-border pt-4 text-[13px] font-medium text-primary transition hover:text-primary-700"
+>
+  Reset colors to this theme
+</button>
+
+<ConfirmDialog
+  isOpen={showResetConfirm}
+  title="Reset theme colors?"
+  description="This will restore the default colors for your currently selected theme. Your other appearance settings will remain unchanged."
+  confirmText="Reset colors"
+  cancelText="Keep current colors"
+  onConfirm={handleResetColors}
+  onCancel={() => setShowResetConfirm(false)}
+/>
       </section>
     </div>
   );
