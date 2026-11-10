@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+   images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "https://cnyltwaanlrpiwqxgbon.supabase.co",
+        pathname: "/storage/v1/object/public/profile-assets/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
